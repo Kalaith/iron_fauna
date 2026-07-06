@@ -1,0 +1,106 @@
+[
+  {
+    "id": "fernhollow",
+    "name": "Fernhollow",
+    "region": "verdant_hollow",
+    "description": "A palisade of living fern-oak around forty households. Everyone here has lost something to the Cradle; everyone still plants in its shadow.",
+    "shop": [
+      { "graft": "spark_coil" },
+      { "graft": "gnasher_jaw" },
+      { "graft": "thorn_launcher" },
+      { "graft": "chitin_plate" },
+      { "graft": "cooling_gill" },
+      { "graft": "sensor_stalk" },
+      { "graft": "healing_pod", "price": 110 }
+    ],
+    "duelists": [
+      {
+        "id": "pell",
+        "name": "Pell the Younger",
+        "blurb": "A farmhand who duels to practice what her mother died doing. Rides a rabbit like it owes her money.",
+        "rank_req": 0,
+        "practice": true,
+        "reward_scrip": 25,
+        "party": [
+          {
+            "species": "bumblit",
+            "name": "Pell's Clover",
+            "grafts": [{ "limb": "foreleg_l", "slot": 0, "graft": "gnasher_jaw" }]
+          }
+        ]
+      },
+      {
+        "id": "orla",
+        "name": "Warden-Cadet Orla",
+        "blurb": "Second seat of the Fernhollow watch. Fights textbook-clean and hates that you don't.",
+        "rank_req": 1,
+        "practice": true,
+        "reward_scrip": 45,
+        "party": [
+          {
+            "species": "volpi",
+            "name": "Orla's Ember",
+            "grafts": [{ "limb": "foreleg_l", "slot": 0, "graft": "spark_coil" }]
+          },
+          {
+            "species": "quillow",
+            "name": "Orla's Wall",
+            "grafts": [
+              { "limb": "foreleg_l", "slot": 0, "graft": "chitin_plate" },
+              { "limb": "foreleg_r", "slot": 0, "graft": "gnasher_jaw" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "bruk",
+        "name": "Bruk of the South Gate",
+        "blurb": "A salvage-monger who duels for parts because raiding scares him. He will tell you it doesn't.",
+        "rank_req": 1,
+        "practice": false,
+        "reward_scrip": 30,
+        "stake": "ember_spitter",
+        "min_stake_value": 60,
+        "party": [
+          {
+            "species": "pangol",
+            "name": "Bruk's Kettle",
+            "grafts": [
+              { "limb": "arm_l", "slot": 0, "graft": "ember_spitter" },
+              { "limb": "back", "slot": 0, "graft": "basalt_carapace" }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "warden_marsh",
+        "name": "Warden Marsh",
+        "blurb": "Keeper of the Fernhollow ring. Duels only those who've beaten his cadets, and stakes real iron when he does.",
+        "rank_req": 2,
+        "practice": false,
+        "reward_scrip": 80,
+        "stake": "bolt_cannon",
+        "min_stake_value": 120,
+        "party": [
+          {
+            "species": "ferrobruin",
+            "name": "Marsh's Patience",
+            "grafts": [
+              { "limb": "back", "slot": 0, "graft": "bolt_cannon" },
+              { "limb": "arm_l", "slot": 0, "graft": "ember_spitter" },
+              { "limb": "haunch_l", "slot": 0, "graft": "shield_membrane" }
+            ]
+          },
+          {
+            "species": "weavil",
+            "name": "Marsh's Mercy",
+            "grafts": [
+              { "limb": "spinneret", "slot": 0, "graft": "healing_pod" },
+              { "limb": "leg_fore_l", "slot": 0, "graft": "spark_coil" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

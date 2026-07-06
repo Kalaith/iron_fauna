@@ -1,6 +1,7 @@
 //! Runtime domain model — engine-agnostic player and world state.
 
 pub mod creature;
+pub mod duel;
 pub mod inventory;
 pub mod party;
 pub mod rider;

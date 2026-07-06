@@ -4,10 +4,12 @@ use crate::combat::engine::Battle;
 use crate::combat::unit::UnitSpec;
 use crate::combat::{resolve, BattleContext, RiderMods, Side, Stance};
 use crate::data::GameData;
+use crate::model::duel::{self, PendingDuel};
 use crate::state::{migrate_save_value, GameSession, SaveData};
 use crate::ui::battle::{BattleScreen, BattleScreenResult};
 use crate::ui::outfit::{OutfitAction, OutfitScreen};
 use crate::ui::overworld::{OverworldResult, OverworldScreen};
+use crate::ui::settlement::{sell_price, SettlementAction, SettlementScreen, SettlementView};
 use crate::ui::{self, MenuContext, UiAction};
 use macroquad::prelude::*;
 use macroquad_toolkit::assets::AssetManager;
@@ -22,15 +24,17 @@ use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_fr
 enum Mode {
     Menu,
     Overworld(OverworldScreen),
+    Settlement(SettlementScreen),
     Outfit(OutfitScreen),
     Battle(Box<BattleScreen>),
 }
 
 /// Where a sub-screen (battle, bench) hands control back to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum ReturnTo {
     Menu,
     Overworld,
+    Settlement(String),
 }
 
 pub struct Game {
@@ -41,6 +45,7 @@ pub struct Game {
     notifications: NotificationManager,
     mode: Mode,
     return_to: ReturnTo,
+    pending_duel: Option<PendingDuel>,
     save_exists: bool,
 }
 
@@ -66,6 +71,7 @@ impl Game {
             notifications: NotificationManager::new(),
             mode: Mode::Menu,
             return_to: ReturnTo::Menu,
+            pending_duel: None,
             save_exists,
         }
     }
@@ -87,14 +93,20 @@ impl Game {
                     selected_slot: None,
                 });
             }
+            "settlement" => {
+                let mut screen = SettlementScreen::new("fernhollow");
+                screen.view = SettlementView::Ring;
+                self.mode = Mode::Settlement(screen);
+            }
             _ => self.mode = Mode::Menu,
         }
     }
 
     fn resume(&mut self) {
-        self.mode = match self.return_to {
+        self.mode = match &self.return_to {
             ReturnTo::Menu => Mode::Menu,
             ReturnTo::Overworld => Mode::Overworld(OverworldScreen::new(&self.session)),
+            ReturnTo::Settlement(id) => Mode::Settlement(SettlementScreen::new(id)),
         };
     }
 
@@ -110,11 +122,14 @@ impl Game {
                 OverworldResult::Continue => {}
                 OverworldResult::BackToMenu => self.mode = Mode::Menu,
                 OverworldResult::OpenSettlement => {
-                    self.return_to = ReturnTo::Overworld;
-                    self.mode = Mode::Outfit(OutfitScreen {
-                        selected: self.session.profile.roster.party.first().copied(),
-                        selected_slot: None,
-                    });
+                    let settlement = self
+                        .data
+                        .world
+                        .map(&self.session.location.map_id)
+                        .and_then(|m| m.settlement.clone());
+                    if let Some(id) = settlement {
+                        self.mode = Mode::Settlement(SettlementScreen::new(&id));
+                    }
                 }
                 OverworldResult::StartEncounter(pack) => {
                     self.return_to = ReturnTo::Overworld;
@@ -132,6 +147,25 @@ impl Game {
         let summary = resolve::apply(&mut self.session, &self.data, &screen.battle);
         for line in summary.lines {
             self.notifications.info(line);
+        }
+        if let Some(pending) = self.pending_duel.take() {
+            let won = matches!(
+                screen.battle.outcome,
+                Some(crate::combat::BattleOutcome::Victory(_))
+            );
+            let duelist = self
+                .data
+                .settlements
+                .get(&pending.settlement_id)
+                .and_then(|s| s.duelist(&pending.duelist_id))
+                .cloned();
+            if let Some(duelist) = duelist {
+                for line in
+                    duel::apply_duel_result(&mut self.session, &self.data, &pending, &duelist, won)
+                {
+                    self.notifications.info(line);
+                }
+            }
         }
         self.resume();
     }
@@ -161,6 +195,7 @@ impl Game {
 
         let mut actions = Vec::new();
         let mut outfit_actions = Vec::new();
+        let mut settlement_actions = Vec::new();
         match &self.mode {
             Mode::Menu => {
                 let ctx = MenuContext {
@@ -172,6 +207,9 @@ impl Game {
                 actions = ui::draw_main_menu(&ctx);
             }
             Mode::Overworld(screen) => screen.draw(&self.data, &self.session),
+            Mode::Settlement(screen) => {
+                settlement_actions = screen.draw(&self.data, &self.session, &virtual_ui);
+            }
             Mode::Outfit(screen) => {
                 outfit_actions = screen.draw(&self.data, &self.session, &virtual_ui);
             }
@@ -184,6 +222,9 @@ impl Game {
         }
         for action in outfit_actions {
             self.apply_outfit_action(action);
+        }
+        for action in settlement_actions {
+            self.apply_settlement_action(action);
         }
 
         self.notifications
@@ -278,6 +319,130 @@ impl Game {
                 }
             }
         }
+    }
+
+    fn apply_settlement_action(&mut self, action: SettlementAction) {
+        let Mode::Settlement(screen) = &mut self.mode else {
+            return;
+        };
+        let settlement_id = screen.settlement_id.clone();
+        match action {
+            SettlementAction::ShowHub => screen.view = SettlementView::Hub,
+            SettlementAction::ShowShop => screen.view = SettlementView::Shop,
+            SettlementAction::ShowRing => screen.view = SettlementView::Ring,
+            SettlementAction::PickStake(duelist) => {
+                screen.view = SettlementView::StakePick { duelist };
+            }
+            SettlementAction::Leave => {
+                self.return_to = ReturnTo::Overworld;
+                self.resume();
+            }
+            SettlementAction::OpenBench => {
+                self.return_to = ReturnTo::Settlement(settlement_id);
+                self.mode = Mode::Outfit(OutfitScreen {
+                    selected: self.session.profile.roster.party.first().copied(),
+                    selected_slot: None,
+                });
+            }
+            SettlementAction::Buy(def_id) => {
+                let price = self
+                    .data
+                    .settlements
+                    .get(&settlement_id)
+                    .and_then(|s| s.shop.iter().find(|e| e.graft == def_id))
+                    .and_then(|e| e.price)
+                    .or_else(|| self.data.graftware.get(&def_id).map(|d| d.value));
+                let Some(price) = price else {
+                    return;
+                };
+                if self.session.profile.inventory.scrip < price {
+                    self.notifications.warning("Not enough scrip");
+                    return;
+                }
+                self.session.profile.inventory.scrip -= price;
+                self.session
+                    .profile
+                    .grant_graft(&def_id, crate::model::inventory::GraftCondition::Intact);
+                let name = self
+                    .data
+                    .graftware
+                    .get(&def_id)
+                    .map(|d| d.name.clone())
+                    .unwrap_or(def_id);
+                self.notifications.success(format!("Bought {}", name));
+            }
+            SettlementAction::Sell(item_id) => {
+                let equipped = self.session.profile.equipped_item_ids();
+                if equipped.contains(&item_id) {
+                    return;
+                }
+                let Some(item) = self.session.profile.inventory.item(item_id) else {
+                    return;
+                };
+                let Some(def) = self.data.graftware.get(&item.def_id) else {
+                    return;
+                };
+                let price = sell_price(def.value);
+                let name = def.name.clone();
+                self.session
+                    .profile
+                    .inventory
+                    .items
+                    .retain(|i| i.id != item_id);
+                self.session.profile.inventory.scrip += price;
+                self.notifications
+                    .info(format!("Sold {} for {}", name, price));
+            }
+            SettlementAction::Challenge { duelist, stake } => {
+                self.start_duel(&settlement_id, &duelist, stake);
+            }
+        }
+    }
+
+    fn start_duel(&mut self, settlement_id: &str, duelist_id: &str, stake: Option<u64>) {
+        let Some(duelist) = self
+            .data
+            .settlements
+            .get(settlement_id)
+            .and_then(|s| s.duelist(duelist_id))
+            .cloned()
+        else {
+            return;
+        };
+        if !duel::can_challenge(&self.session, settlement_id, &duelist) {
+            self.notifications.warning("The ring won't allow it yet");
+            return;
+        }
+        if !duelist.practice && stake.is_none() {
+            return;
+        }
+        let enemy: Vec<UnitSpec> = duelist
+            .party
+            .iter()
+            .map(|u| UnitSpec {
+                species_id: u.species.clone(),
+                name: u
+                    .name
+                    .clone()
+                    .unwrap_or_else(|| format!("{}'s creature", duelist.name)),
+                side: Side::Enemy,
+                creature_id: None,
+                bond: 0.0,
+                stance: Stance::Aggressive,
+                grafts: u
+                    .grafts
+                    .iter()
+                    .map(|g| (g.limb.clone(), g.slot, g.graft.clone(), None))
+                    .collect(),
+            })
+            .collect();
+        self.pending_duel = Some(PendingDuel {
+            settlement_id: settlement_id.to_owned(),
+            duelist_id: duelist_id.to_owned(),
+            my_stake: stake,
+        });
+        self.return_to = ReturnTo::Settlement(settlement_id.to_owned());
+        self.start_battle(BattleContext::Duel, enemy);
     }
 
     /// Assembles battle specs for the current traveling party.
