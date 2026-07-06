@@ -1,0 +1,207 @@
+{
+  "start_map": "haven_row",
+  "regions": [
+    {
+      "id": "verdant_hollow",
+      "name": "Verdant Hollow",
+      "description": "The temperate cradle where the last easy living gets done. Its Gestarium sleeps lightly.",
+      "tier": 1,
+      "gestarium_id": "the_cradle",
+      "biomes": ["meadow", "forest"]
+    },
+    {
+      "id": "mirrormere",
+      "name": "Mirrormere",
+      "description": "Lakes clear enough to see what the old world dumped in them.",
+      "tier": 2,
+      "gestarium_id": "the_font",
+      "biomes": ["coast", "mere"]
+    },
+    {
+      "id": "stormcap",
+      "name": "Stormcap Heights",
+      "description": "Mountains that keep their own weather and their own grudges.",
+      "tier": 2,
+      "gestarium_id": "the_spire",
+      "biomes": ["ridge", "storm"]
+    },
+    {
+      "id": "ashvein",
+      "name": "Ashvein Ridge",
+      "description": "A caldera country still deciding whether it is done erupting.",
+      "tier": 3,
+      "gestarium_id": "the_kiln",
+      "biomes": ["caldera", "ashfield"]
+    },
+    {
+      "id": "sporefen",
+      "name": "Sporefen",
+      "description": "A swamp that digests what it is given. It has been given a great deal.",
+      "tier": 3,
+      "gestarium_id": "the_bloom",
+      "biomes": ["fen", "spore"]
+    },
+    {
+      "id": "bonewhite",
+      "name": "Bonewhite Flats",
+      "description": "The first region the old war killed. Nothing here has forgiven anyone.",
+      "tier": 4,
+      "gestarium_id": "the_maw",
+      "biomes": ["flats", "bonewhite"]
+    }
+  ],
+  "maps": [
+    {
+      "id": "haven_row",
+      "name": "Fernhollow",
+      "region": "verdant_hollow",
+      "settlement": "fernhollow",
+      "spawn_x": 6,
+      "spawn_y": 7,
+      "rows": [
+        "################..##############",
+        "################..##############",
+        "##............................##",
+        "##...####...####...####.......##",
+        "##...####...####...####.......##",
+        "##....s......s......,.........##",
+        "##..,,,,,,,,,,,,,,,,,,,.......##",
+        "##..,......................,..##",
+        "##..,......................,..##",
+        "##..,,,,,,,,,,,,,,,,,,,,,,,,..##",
+        "##..............................",
+        "##...........................###",
+        "##............................##",
+        "################################"
+      ],
+      "warps": [
+        { "x": 16, "y": 0, "to_map": "old_growth", "to_x": 16, "to_y": 12 },
+        { "x": 17, "y": 0, "to_map": "old_growth", "to_x": 17, "to_y": 12 },
+        { "x": 31, "y": 10, "to_map": "verdant_meadow", "to_x": 1, "to_y": 10 }
+      ],
+      "npcs": [
+        {
+          "id": "warden_isa",
+          "x": 24,
+          "y": 7,
+          "name": "Warden Isa",
+          "lines": [
+            "Fernhollow holds because somebody rides out every morning and thins what the Cradle births.",
+            "Lately that somebody is you. No family waiting on you — makes you brave. Or spendable. Same thing here.",
+            "The bench in town will graft anything you can carry home. Mind the strain. The little ones break quiet."
+          ]
+        },
+        {
+          "id": "tally_kid",
+          "x": 10,
+          "y": 8,
+          "name": "Tally",
+          "lines": [
+            "I saw a Volpi once! It let me touch its nose!",
+            "Mama says when I'm big I get grafted a gun-arm like everyone. I don't want one. Don't tell."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "verdant_meadow",
+      "name": "Verdant Meadow",
+      "region": "verdant_hollow",
+      "spawn_x": 3,
+      "spawn_y": 10,
+      "encounter_rate": 0.14,
+      "encounters": [
+        { "species": "bumblit", "weight": 5, "min": 1, "max": 2 },
+        { "species": "volpi", "weight": 3 },
+        { "species": "thistlin", "weight": 3 },
+        { "species": "quillow", "weight": 2 },
+        { "species": "kestrelle", "weight": 2 }
+      ],
+      "rows": [
+        "####################################",
+        "##................................##",
+        "##..ggggg.....ggggggg.............##",
+        "##..ggggg.....ggggggg....~~~......##",
+        "##..ggggg.....ggggggg....~~~......##",
+        "##.............................^^.##",
+        "##...,,,,,,,,,,,,,,,,,,,,,,,......##",
+        "##...,.....................,......##",
+        "##...,.....ggggggggg.......,......##",
+        "##...,.....ggggggggg.......,......##",
+        ".....,.....ggggggggg.......,......##",
+        "##...,.....................,......##",
+        "##...,,,,,,,,,,,,,,,,,,,,,,,......##",
+        "##................................##",
+        "##....ggggggg........gggggg.......##",
+        "##....ggggggg........gggggg.......##",
+        "##....ggggggg........gggggg.......##",
+        "##................................##",
+        "##................................##",
+        "####################################"
+      ],
+      "warps": [{ "x": 0, "y": 10, "to_map": "haven_row", "to_x": 30, "to_y": 10 }],
+      "npcs": [
+        {
+          "id": "scout_perrin",
+          "x": 20,
+          "y": 13,
+          "name": "Scout Perrin",
+          "lines": [
+            "Grass moves wrong out here sometimes. That's how you tell the wild ones from the factory-born.",
+            "Wild ones just want to be left alone. Subdue them gentle — crack the shell, never the thing inside."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "old_growth",
+      "name": "Old Growth",
+      "region": "verdant_hollow",
+      "spawn_x": 16,
+      "spawn_y": 12,
+      "encounter_rate": 0.13,
+      "encounters": [
+        { "species": "weavil", "weight": 4 },
+        { "species": "lumigrub", "weight": 4, "min": 1, "max": 3 },
+        { "species": "thistlin", "weight": 3 },
+        { "species": "quillow", "weight": 2 },
+        { "species": "volpi", "weight": 2 }
+      ],
+      "rows": [
+        "################################",
+        "##....................##########",
+        "##..ggg...####...ggg..##########",
+        "##..ggg...#DD#...ggg..##########",
+        "##..ggg...####........##########",
+        "##.........,,.........##########",
+        "##..,,,,,,,,,,,,,,,...##########",
+        "##..,..ggggg......,...##########",
+        "##..,..ggggg......,............#",
+        "##..,..ggggg......,............#",
+        "##..,.............,....ggggg..##",
+        "##..,,,,,,,,,,,,,,,....ggggg..##",
+        "##.....................ggggg..##",
+        "##.............................#",
+        "################..##############",
+        "################..##############"
+      ],
+      "warps": [
+        { "x": 16, "y": 15, "to_map": "haven_row", "to_x": 16, "to_y": 2 },
+        { "x": 17, "y": 15, "to_map": "haven_row", "to_x": 17, "to_y": 2 }
+      ],
+      "npcs": [
+        {
+          "id": "grafter_moel",
+          "x": 8,
+          "y": 13,
+          "name": "Grafter Moel",
+          "lines": [
+            "That's the Cradle behind me. Doors sealed since before my mother's mother. Pray they stay that way.",
+            "Everything it births comes out already armed. Imagine being born with the gun grown on.",
+            "When the doors open — and they will — you'll want more than two light mounts. Come find me first."
+          ]
+        }
+      ]
+    }
+  ]
+}

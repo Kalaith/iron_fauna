@@ -2,6 +2,7 @@
 
 pub mod battle;
 pub mod outfit;
+pub mod overworld;
 
 use crate::data::species::Element;
 use crate::data::GameData;
@@ -17,6 +18,7 @@ pub const LOGICAL_HEIGHT: f32 = 720.0;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UiAction {
     NewGame,
+    EnterWorld,
     StartDevBattle,
     OpenOutfit,
     Save,
@@ -74,7 +76,8 @@ pub fn draw_main_menu(ctx: &MenuContext<'_>) -> Vec<UiAction> {
         TextStyle::new(16.0, dark::TEXT_DIM).params(),
     );
 
-    let buttons: [(&str, UiAction, bool); 6] = [
+    let buttons: [(&str, UiAction, bool); 7] = [
+        ("Enter the World", UiAction::EnterWorld, true),
         ("New Game", UiAction::NewGame, true),
         ("Dev Battle", UiAction::StartDevBattle, true),
         ("Party & Grafting", UiAction::OpenOutfit, true),

@@ -31,6 +31,14 @@ impl PaceSetting {
     }
 }
 
+/// Where the player stands in the overworld.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Location {
+    pub map_id: String,
+    pub x: i32,
+    pub y: i32,
+}
+
 /// The live game session: everything that persists into a save.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameSession {
@@ -38,6 +46,9 @@ pub struct GameSession {
     pub pace: PaceSetting,
     /// Total battles fought (drives bond growth and pacing stats).
     pub battles_fought: u32,
+    pub location: Location,
+    /// Overworld steps taken — seeds encounter randomness deterministically.
+    pub steps: u64,
 }
 
 impl GameSession {
@@ -58,10 +69,21 @@ impl GameSession {
             let _ = creature.equip(data, &inventory, "foreleg_r", 0, plate);
         }
 
+        let start = data
+            .world
+            .map(&data.world.start_map)
+            .expect("world start map missing");
+
         Self {
             profile,
             pace: PaceSetting::Wait,
             battles_fought: 0,
+            location: Location {
+                map_id: start.id.clone(),
+                x: start.spawn_x,
+                y: start.spawn_y,
+            },
+            steps: 0,
         }
     }
 }

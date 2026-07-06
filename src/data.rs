@@ -3,6 +3,7 @@
 pub mod balance;
 pub mod graftware;
 pub mod species;
+pub mod world;
 
 use balance::BalanceConfig;
 use graftware::GraftwareDef;
@@ -12,11 +13,13 @@ use macroquad_toolkit::data_loader::{
 };
 use serde::{Deserialize, Serialize};
 use species::SpeciesDef;
+use world::WorldDef;
 
 const GAME_CONFIG_JSON: &str = include_str!("../assets/data/game_config.json");
 const BALANCE_JSON: &str = include_str!("../assets/data/balance.json");
 const SPECIES_JSON: &str = include_str!("../assets/data/species.json");
 const GRAFTWARE_JSON: &str = include_str!("../assets/data/graftware.json");
+const WORLD_JSON: &str = include_str!("../assets/data/world.json");
 const TEXTURE_MANIFEST_JSON: &str = include_str!("../assets/data/texture_manifest.json");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,6 +36,7 @@ pub struct GameData {
     pub balance: BalanceConfig,
     pub species: DataRegistry<SpeciesDef>,
     pub graftware: DataRegistry<GraftwareDef>,
+    pub world: WorldDef,
     pub texture_manifest: Vec<TextureConfig>,
 }
 
@@ -42,6 +46,7 @@ impl GameData {
         let balance = load_embedded_json_labeled("balance", BALANCE_JSON)?;
         let species = DataRegistry::from_embedded_json(SPECIES_JSON, "id")?;
         let graftware = DataRegistry::from_embedded_json(GRAFTWARE_JSON, "id")?;
+        let world = load_embedded_json_labeled("world", WORLD_JSON)?;
         let texture_manifest = load_embedded_json(TEXTURE_MANIFEST_JSON)?;
 
         Ok(Self {
@@ -49,6 +54,7 @@ impl GameData {
             balance,
             species,
             graftware,
+            world,
             texture_manifest,
         })
     }

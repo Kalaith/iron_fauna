@@ -7,6 +7,7 @@ use crate::data::GameData;
 use crate::state::{migrate_save_value, GameSession, SaveData};
 use crate::ui::battle::{BattleScreen, BattleScreenResult};
 use crate::ui::outfit::{OutfitAction, OutfitScreen};
+use crate::ui::overworld::{OverworldResult, OverworldScreen};
 use crate::ui::{self, MenuContext, UiAction};
 use macroquad::prelude::*;
 use macroquad_toolkit::assets::AssetManager;
@@ -20,8 +21,16 @@ use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_fr
 
 enum Mode {
     Menu,
+    Overworld(OverworldScreen),
     Outfit(OutfitScreen),
     Battle(Box<BattleScreen>),
+}
+
+/// Where a sub-screen (battle, bench) hands control back to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ReturnTo {
+    Menu,
+    Overworld,
 }
 
 pub struct Game {
@@ -31,6 +40,7 @@ pub struct Game {
     assets: AssetManager,
     notifications: NotificationManager,
     mode: Mode,
+    return_to: ReturnTo,
     save_exists: bool,
 }
 
@@ -55,18 +65,63 @@ impl Game {
             assets,
             notifications: NotificationManager::new(),
             mode: Mode::Menu,
+            return_to: ReturnTo::Menu,
             save_exists,
         }
+    }
+
+    /// Seeds a named state for the headless screenshot harness.
+    pub fn begin_capture_scene(&mut self, scene: &str) {
+        match scene {
+            "overworld" => {
+                self.return_to = ReturnTo::Overworld;
+                self.mode = Mode::Overworld(OverworldScreen::new(&self.session));
+            }
+            "battle" => {
+                self.return_to = ReturnTo::Menu;
+                self.start_dev_battle();
+            }
+            "outfit" => {
+                self.mode = Mode::Outfit(OutfitScreen {
+                    selected: self.session.profile.roster.party.first().copied(),
+                    selected_slot: None,
+                });
+            }
+            _ => self.mode = Mode::Menu,
+        }
+    }
+
+    fn resume(&mut self) {
+        self.mode = match self.return_to {
+            ReturnTo::Menu => Mode::Menu,
+            ReturnTo::Overworld => Mode::Overworld(OverworldScreen::new(&self.session)),
+        };
     }
 
     pub fn update(&mut self, dt: f32) {
         self.notifications.update(dt);
 
-        if let Mode::Battle(screen) = &mut self.mode {
-            match screen.update(&self.data, dt) {
+        match &mut self.mode {
+            Mode::Battle(screen) => match screen.update(&self.data, dt) {
                 BattleScreenResult::Continue => {}
                 BattleScreenResult::Finished => self.finish_battle(),
-            }
+            },
+            Mode::Overworld(screen) => match screen.update(&self.data, &mut self.session, dt) {
+                OverworldResult::Continue => {}
+                OverworldResult::BackToMenu => self.mode = Mode::Menu,
+                OverworldResult::OpenSettlement => {
+                    self.return_to = ReturnTo::Overworld;
+                    self.mode = Mode::Outfit(OutfitScreen {
+                        selected: self.session.profile.roster.party.first().copied(),
+                        selected_slot: None,
+                    });
+                }
+                OverworldResult::StartEncounter(pack) => {
+                    self.return_to = ReturnTo::Overworld;
+                    self.start_battle(BattleContext::WildSubdue, pack);
+                }
+            },
+            _ => {}
         }
     }
 
@@ -77,6 +132,26 @@ impl Game {
         let summary = resolve::apply(&mut self.session, &self.data, &screen.battle);
         for line in summary.lines {
             self.notifications.info(line);
+        }
+        self.resume();
+    }
+
+    fn start_battle(&mut self, context: BattleContext, enemy: Vec<UnitSpec>) {
+        let player = self.party_unit_specs();
+        if player.is_empty() {
+            self.notifications.warning("No creatures in the party");
+            return;
+        }
+        let seed =
+            1000 + self.session.battles_fought as u64 * 7919 + self.session.steps.wrapping_mul(31);
+        let rider_mods = RiderMods::from_rider(&self.session.profile.rider);
+        match Battle::new(&self.data, context, &player, &enemy, rider_mods, seed) {
+            Ok(battle) => {
+                self.mode = Mode::Battle(Box::new(BattleScreen::new(battle, self.session.pace)));
+            }
+            Err(err) => self
+                .notifications
+                .danger(format!("Battle setup failed: {}", err)),
         }
     }
 
@@ -96,6 +171,7 @@ impl Game {
                 };
                 actions = ui::draw_main_menu(&ctx);
             }
+            Mode::Overworld(screen) => screen.draw(&self.data, &self.session),
             Mode::Outfit(screen) => {
                 outfit_actions = screen.draw(&self.data, &self.session, &virtual_ui);
             }
@@ -123,8 +199,13 @@ impl Game {
                 self.session = GameSession::new_game(&self.data);
                 self.notifications.info("A new rider takes the road");
             }
+            UiAction::EnterWorld => {
+                self.return_to = ReturnTo::Overworld;
+                self.mode = Mode::Overworld(OverworldScreen::new(&self.session));
+            }
             UiAction::StartDevBattle => self.start_dev_battle(),
             UiAction::OpenOutfit => {
+                self.return_to = ReturnTo::Menu;
                 self.mode = Mode::Outfit(OutfitScreen {
                     selected: self.session.profile.roster.party.first().copied(),
                     selected_slot: None,
@@ -145,7 +226,7 @@ impl Game {
             return;
         };
         match action {
-            OutfitAction::Back => self.mode = Mode::Menu,
+            OutfitAction::Back => self.resume(),
             OutfitAction::SelectCreature(id) => {
                 screen.selected = Some(id);
                 screen.selected_slot = None;
@@ -234,13 +315,8 @@ impl Game {
             .collect()
     }
 
-    /// A deterministic sample encounter until the overworld provides real ones.
+    /// A deterministic sample encounter for engine testing from the menu.
     fn start_dev_battle(&mut self) {
-        let player = self.party_unit_specs();
-        if player.is_empty() {
-            self.notifications.warning("No creatures in the party");
-            return;
-        }
         let wave = self.session.battles_fought % 3;
         let enemy: Vec<UnitSpec> = match wave {
             0 => vec![wild("bumblit"), wild("bumblit")],
@@ -261,16 +337,8 @@ impl Game {
         } else {
             BattleContext::WildSubdue
         };
-        let seed = 1000 + self.session.battles_fought as u64 * 7919;
-        let rider_mods = RiderMods::from_rider(&self.session.profile.rider);
-        match Battle::new(&self.data, context, &player, &enemy, rider_mods, seed) {
-            Ok(battle) => {
-                self.mode = Mode::Battle(Box::new(BattleScreen::new(battle, self.session.pace)));
-            }
-            Err(err) => self
-                .notifications
-                .danger(format!("Battle setup failed: {}", err)),
-        }
+        self.return_to = ReturnTo::Menu;
+        self.start_battle(context, enemy);
     }
 
     fn save_game(&mut self) {

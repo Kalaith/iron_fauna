@@ -37,25 +37,6 @@ impl TileKind {
     pub fn walkable(self) -> bool {
         !matches!(self, TileKind::Tree | TileKind::Water | TileKind::Rock)
     }
-
-    pub fn encounter_prone(self) -> bool {
-        self == TileKind::Grass
-    }
-}
-
-/// How a region currently stands — evolves with factory verdicts (§9).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum RegionMood {
-    /// Factory still active: dangerous wilds, wary settlements.
-    Threatened,
-    /// Purged: safe but dead ground.
-    Dead,
-    /// Reseeded: reviving, lush — and quietly at risk.
-    Reviving,
-    /// Bound: the player runs the machine.
-    Claimed,
-    /// Relapsed: militarized, hostile again.
-    Relapsed,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -211,10 +192,19 @@ mod tests {
                 "{}: spawn blocked",
                 map.id
             );
-            assert!(world.region(&map.region).is_some(), "{}: bad region", map.id);
+            assert!(
+                world.region(&map.region).is_some(),
+                "{}: bad region",
+                map.id
+            );
             for warp in &map.warps {
                 let target = world.map(&warp.to_map);
-                assert!(target.is_some(), "{}: warp to unknown map {}", map.id, warp.to_map);
+                assert!(
+                    target.is_some(),
+                    "{}: warp to unknown map {}",
+                    map.id,
+                    warp.to_map
+                );
                 assert!(
                     target.unwrap().walkable(warp.to_x, warp.to_y),
                     "{}: warp lands blocked in {}",
