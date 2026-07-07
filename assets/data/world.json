@@ -64,7 +64,7 @@
         "##............................##",
         "##...####...####...####.......##",
         "##...####...####...####.......##",
-        "##....s......s......,.........##",
+        "##....s......s......s.........##",
         "##..,,,,,,,,,,,,,,,,,,,.......##",
         "##..,......................,..##",
         "##..,......................,..##",
@@ -79,7 +79,50 @@
         { "x": 17, "y": 0, "to_map": "old_growth", "to_x": 17, "to_y": 12 },
         { "x": 31, "y": 10, "to_map": "verdant_meadow", "to_x": 1, "to_y": 10 }
       ],
+      "doors": [
+        { "x": 6, "y": 5, "target": "bench", "label": "Bench" },
+        { "x": 13, "y": 5, "target": "shop", "label": "Supply Post" },
+        { "x": 20, "y": 5, "target": "ring", "label": "Duel Ring" }
+      ],
       "npcs": [
+        {
+          "id": "quartermaster_bram",
+          "x": 13,
+          "y": 7,
+          "name": "Quartermaster Bram",
+          "dialogue": [
+            {
+              "when": { "quest_ready": "morning_thinning" },
+              "lines": [
+                "Three of them subdued and sent home? The dawn patrol can sleep in for once.",
+                "The watch pays what it promised. Take it — and take this plate off a rider who won't be needing it again."
+              ],
+              "complete_quest": "morning_thinning"
+            },
+            {
+              "when": { "quest_active": "morning_thinning" },
+              "lines": [
+                "Still more to thin out past the palisade? The grass won't do it itself.",
+                "Crack the shell, never the thing inside. Bring me a quiet morning."
+              ]
+            },
+            {
+              "when": { "quest_done": "morning_thinning" },
+              "lines": [
+                "The Hollow remembers a quiet dawn. That was your doing.",
+                "Come back when there's more that wants thinning. There's always more."
+              ]
+            },
+            {
+              "lines": [
+                "You're the orphan rider Isa keeps leaning on. Good. I've work the watch can't spare hands for.",
+                "Every morning something the Cradle birthed wanders the meadow past the east gate. Subdue three of them — gently, mind. The watch pays.",
+                "Take the road east out of town. Come back when it's done."
+              ],
+              "start_quest": "morning_thinning"
+            }
+          ]
+        },
         {
           "id": "warden_isa",
           "x": 24,

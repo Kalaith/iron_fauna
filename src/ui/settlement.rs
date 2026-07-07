@@ -73,7 +73,7 @@ impl SettlementScreen {
 
         self.draw_header(settlement, session, mouse, &mut actions);
         match &self.view {
-            SettlementView::Hub => self.draw_hub(data, settlement, session, mouse, &mut actions),
+            SettlementView::Hub => self.draw_hub(settlement, mouse, &mut actions),
             SettlementView::Shop => self.draw_shop(data, settlement, session, mouse, &mut actions),
             SettlementView::Ring => self.draw_ring(data, settlement, session, mouse, &mut actions),
             SettlementView::StakePick { duelist } => {
@@ -128,9 +128,7 @@ impl SettlementScreen {
 
     fn draw_hub(
         &self,
-        data: &GameData,
         settlement: &SettlementDef,
-        session: &GameSession,
         mouse: Vec2,
         actions: &mut Vec<SettlementAction>,
     ) {
@@ -191,48 +189,61 @@ impl SettlementScreen {
                 actions.push(action.clone());
             }
         }
+    }
 
-        // Stewardship: a reseeded, untended region can be watched (§9.1).
-        let factory_id = data
+    /// Stewardship: a reseeded, untended region can be watched (§9.1). Lives in
+    /// the Supply Post since it is a scrip transaction like the rest.
+    fn draw_fund_watch(
+        &self,
+        data: &GameData,
+        settlement: &SettlementDef,
+        session: &GameSession,
+        rect: Rect,
+        mouse: Vec2,
+        actions: &mut Vec<SettlementAction>,
+    ) -> bool {
+        let Some(factory_id) = data
             .world
             .region(&settlement.region)
-            .map(|r| r.gestarium_id.clone());
-        if let Some(factory_id) = factory_id {
-            let state = session.world_state.factory(&factory_id);
-            if state.verdict == Some(crate::model::worldstate::Verdict::Reseed)
-                && !state.invested
-                && !state.relapsed
-            {
-                let cost = data.balance.world.watch_cost;
-                let rect = Rect::new(84.0, 220.0 + 3.0 * 96.0, 520.0, 78.0);
-                let hovered = rect.contains_point(mouse);
-                draw_surface(
-                    rect,
-                    &SurfaceStyle::new(if hovered {
-                        Color::new(0.14, 0.18, 0.15, 1.0)
-                    } else {
-                        Color::new(0.10, 0.13, 0.11, 1.0)
-                    })
-                    .with_border(1.0, Color::new(0.40, 0.60, 0.45, 0.6))
-                    .with_left_accent(4.0, Color::new(0.40, 0.65, 0.45, 1.0)),
-                );
-                draw_ui_text_ex(
-                    &format!("Fund the Watch — {} scrip", cost),
-                    rect.x + 18.0,
-                    rect.y + 32.0,
-                    TextStyle::new(20.0, dark::TEXT_BRIGHT).params(),
-                );
-                draw_ui_text_ex(
-                    "Station eyes on the reseeded factory so the old temptation stays buried",
-                    rect.x + 18.0,
-                    rect.y + 58.0,
-                    TextStyle::new(14.0, dark::TEXT_DIM).params(),
-                );
-                if hovered && is_mouse_button_released(MouseButton::Left) {
-                    actions.push(SettlementAction::FundWatch);
-                }
-            }
+            .map(|r| r.gestarium_id.clone())
+        else {
+            return false;
+        };
+        let state = session.world_state.factory(&factory_id);
+        if state.verdict != Some(crate::model::worldstate::Verdict::Reseed)
+            || state.invested
+            || state.relapsed
+        {
+            return false;
         }
+        let cost = data.balance.world.watch_cost;
+        let hovered = rect.contains_point(mouse);
+        draw_surface(
+            rect,
+            &SurfaceStyle::new(if hovered {
+                Color::new(0.14, 0.18, 0.15, 1.0)
+            } else {
+                Color::new(0.10, 0.13, 0.11, 1.0)
+            })
+            .with_border(1.0, Color::new(0.40, 0.60, 0.45, 0.6))
+            .with_left_accent(4.0, Color::new(0.40, 0.65, 0.45, 1.0)),
+        );
+        draw_ui_text_ex(
+            &format!("Fund the Watch — {} scrip", cost),
+            rect.x + 12.0,
+            rect.y + 22.0,
+            TextStyle::new(16.0, dark::TEXT_BRIGHT).params(),
+        );
+        draw_ui_text_ex(
+            "Station eyes on the reseeded factory so the old temptation stays buried",
+            rect.x + 12.0,
+            rect.y + 40.0,
+            TextStyle::new(12.0, dark::TEXT_DIM).params(),
+        );
+        if hovered && is_mouse_button_released(MouseButton::Left) {
+            actions.push(SettlementAction::FundWatch);
+        }
+        true
     }
 
     fn draw_shop(
@@ -253,6 +264,10 @@ impl SettlementScreen {
         );
         let content = rect.inset(14.0);
         let mut y = content.y + 40.0;
+        let watch_rect = Rect::new(content.x, y, content.w, 52.0);
+        if self.draw_fund_watch(data, settlement, session, watch_rect, mouse, actions) {
+            y += 60.0;
+        }
         for entry in &settlement.shop {
             let Some(def) = data.graftware.get(&entry.graft) else {
                 continue;

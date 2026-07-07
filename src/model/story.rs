@@ -45,6 +45,26 @@ pub fn cond_passes(cond: &DialogueCond, session: &GameSession) -> bool {
             return false;
         }
     }
+    if let Some(quest) = &cond.quest_active {
+        if !session.quests.is_active(quest) {
+            return false;
+        }
+    }
+    if let Some(quest) = &cond.quest_ready {
+        if !session.quests.is_ready(quest) {
+            return false;
+        }
+    }
+    if let Some(quest) = &cond.quest_done {
+        if !session.quests.is_done(quest) {
+            return false;
+        }
+    }
+    if let Some(quest) = &cond.quest_none {
+        if !session.quests.is_untaken(quest) {
+            return false;
+        }
+    }
     true
 }
 
@@ -104,6 +124,14 @@ pub fn apply_dialogue_effects(
             notes.push(format!("Received: {}", def.name));
         }
     }
+    if let Some(quest_id) = &rule.start_quest {
+        if let Some(note) = crate::model::quest::start(session, data, quest_id) {
+            notes.push(note);
+        }
+    }
+    if let Some(quest_id) = &rule.complete_quest {
+        notes.extend(crate::model::quest::complete(session, data, quest_id));
+    }
     notes
 }
 
@@ -131,6 +159,8 @@ mod tests {
             set_flags: vec![],
             give_scrip: 0,
             give_grafts: vec![],
+            start_quest: None,
+            complete_quest: None,
         }
     }
 
@@ -185,6 +215,8 @@ mod tests {
             set_flags: vec!["paid".into()],
             give_scrip: 100,
             give_grafts: vec!["spark_coil".into()],
+            start_quest: None,
+            complete_quest: None,
         };
         let npc = npc_with_rules(vec![reward]);
 

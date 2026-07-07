@@ -4,6 +4,7 @@ pub mod creature;
 pub mod duel;
 pub mod inventory;
 pub mod party;
+pub mod quest;
 pub mod rider;
 pub mod story;
 pub mod warunit;

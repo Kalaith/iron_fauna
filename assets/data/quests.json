@@ -1,0 +1,11 @@
+[
+  {
+    "id": "morning_thinning",
+    "name": "The Morning Thinning",
+    "giver": "Quartermaster Bram",
+    "tracker": "Subdue wild creatures past the palisade",
+    "objective": { "kind": "subdue_wild", "count": 3 },
+    "reward_scrip": 90,
+    "reward_grafts": ["chitin_plate"]
+  }
+]

@@ -1,9 +1,12 @@
 //! High-level game loop and state transitions.
 
+mod capture;
+
 use crate::audio::{Audio, Sfx};
 use crate::combat::engine::Battle;
 use crate::combat::unit::UnitSpec;
 use crate::combat::{resolve, BattleContext, RiderMods, Side, Stance};
+use crate::data::world::DoorTarget;
 use crate::data::GameData;
 use crate::model::duel::{self, PendingDuel};
 use crate::model::worldstate::Verdict;
@@ -98,107 +101,6 @@ impl Game {
         }
     }
 
-    /// Seeds a named state for the headless screenshot harness.
-    pub fn begin_capture_scene(&mut self, scene: &str) {
-        match scene {
-            "overworld" => {
-                self.return_to = ReturnTo::Overworld;
-                self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
-            }
-            "battle" => {
-                self.return_to = ReturnTo::Menu;
-                self.start_dev_battle();
-            }
-            "battle_aim" => {
-                self.return_to = ReturnTo::Menu;
-                self.session.battles_fought = 2; // wave with an armed war-unit
-                self.start_dev_battle();
-                if let Mode::Battle(screen) = &mut self.mode {
-                    screen.force_aim_capture(&self.data);
-                }
-            }
-            "battle_juice" => {
-                // Active pace so combat runs freely and floating text appears.
-                self.return_to = ReturnTo::Menu;
-                self.session.pace = crate::state::PaceSetting::Active;
-                self.session.battles_fought = 2;
-                self.start_dev_battle();
-            }
-            "outfit" => {
-                self.mode = Mode::Outfit(OutfitScreen {
-                    selected: self.session.profile.roster.party.first().copied(),
-                    selected_slot: None,
-                });
-            }
-            "settlement" => {
-                let mut screen = SettlementScreen::new("fernhollow");
-                screen.view = SettlementView::Ring;
-                self.mode = Mode::Settlement(screen);
-            }
-            "factory" => {
-                self.session.location = crate::state::Location {
-                    map_id: "cradle_f1".to_owned(),
-                    x: 14,
-                    y: 13,
-                };
-                self.return_to = ReturnTo::Overworld;
-                self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
-            }
-            "verdict" => {
-                self.mode = Mode::FactoryHeart(VerdictScreen {
-                    factory_id: "the_cradle".to_owned(),
-                    kind: FactoryScreenKind::Verdict,
-                });
-            }
-            "endgame" => {
-                self.session.location = crate::state::Location {
-                    map_id: "ruin_field".to_owned(),
-                    x: 15,
-                    y: 8,
-                };
-                self.return_to = ReturnTo::Overworld;
-                self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
-            }
-            "bestiary" => {
-                // Seed a partial collection so the screen shows both states.
-                for sp in [
-                    "weavil",
-                    "kestrelle",
-                    "pangol",
-                    "cervolt",
-                    "toxole",
-                    "tembolo",
-                ] {
-                    self.session.profile.spawn_creature(
-                        &self.data,
-                        sp,
-                        crate::model::creature::CreatureOrigin::Wild,
-                    );
-                }
-                self.mode = Mode::Bestiary(BestiaryScreen);
-            }
-            "ledger" => {
-                use crate::model::worldstate::Verdict;
-                let verdicts = [
-                    ("the_cradle", Verdict::Reseed, false),
-                    ("the_font", Verdict::Purge, false),
-                    ("the_spire", Verdict::Bind, false),
-                    ("the_kiln", Verdict::Reseed, true),
-                    ("the_bloom", Verdict::Purge, false),
-                    ("the_maw", Verdict::Reseed, false),
-                ];
-                for (id, v, relapsed) in verdicts {
-                    let s = self.session.world_state.factory_mut(id);
-                    s.heart_defeated = true;
-                    s.verdict = Some(v);
-                    s.relapsed = relapsed;
-                }
-                self.mode = Mode::Ledger(LedgerScreen);
-            }
-            _ => self.mode = Mode::Menu,
-        }
-    }
-
     fn resume(&mut self) {
         self.mode = match &self.return_to {
             ReturnTo::Menu => Mode::Menu,
@@ -218,16 +120,7 @@ impl Game {
             Mode::Overworld(screen) => match screen.update(&self.data, &mut self.session, dt) {
                 OverworldResult::Continue => {}
                 OverworldResult::BackToMenu => self.mode = Mode::Menu,
-                OverworldResult::OpenSettlement => {
-                    let settlement = self
-                        .data
-                        .world
-                        .map(&self.session.location.map_id)
-                        .and_then(|m| m.settlement.clone());
-                    if let Some(id) = settlement {
-                        self.mode = Mode::Settlement(SettlementScreen::new(&id));
-                    }
-                }
+                OverworldResult::OpenSettlement(target) => self.enter_building(target),
                 OverworldResult::StartEncounter(pack) => {
                     self.return_to = ReturnTo::Overworld;
                     self.start_battle(BattleContext::WildSubdue, pack);
@@ -235,6 +128,37 @@ impl Game {
                 OverworldResult::HeartInteract(factory_id) => self.heart_interact(&factory_id),
             },
             _ => {}
+        }
+    }
+
+    /// Steps through a settlement door into a specific facility. Bench opens
+    /// the grafting screen directly; the rest open the town screen on that view.
+    fn enter_building(&mut self, target: DoorTarget) {
+        let Some(id) = self
+            .data
+            .world
+            .map(&self.session.location.map_id)
+            .and_then(|m| m.settlement.clone())
+        else {
+            return;
+        };
+        match target {
+            DoorTarget::Bench => {
+                self.return_to = ReturnTo::Overworld;
+                self.mode = Mode::Outfit(OutfitScreen {
+                    selected: self.session.profile.roster.party.first().copied(),
+                    selected_slot: None,
+                });
+            }
+            DoorTarget::Shop | DoorTarget::Ring | DoorTarget::Hub => {
+                let mut screen = SettlementScreen::new(&id);
+                screen.view = match target {
+                    DoorTarget::Shop => SettlementView::Shop,
+                    DoorTarget::Ring => SettlementView::Ring,
+                    _ => SettlementView::Hub,
+                };
+                self.mode = Mode::Settlement(screen);
+            }
         }
     }
 
@@ -313,6 +237,19 @@ impl Game {
             screen.battle.outcome,
             Some(crate::combat::BattleOutcome::Victory(_))
         );
+        // Subduing wild creatures advances any open bounty quest.
+        if screen.battle.context == BattleContext::WildSubdue {
+            if let Some(crate::combat::BattleOutcome::Victory(rewards)) = &screen.battle.outcome {
+                let subdued = rewards.captured_species.len() as u32;
+                if subdued > 0 {
+                    for line in
+                        crate::model::quest::advance_subdue(&mut self.session, &self.data, subdued)
+                    {
+                        self.notifications.success(line);
+                    }
+                }
+            }
+        }
         if let Some(pending) = self.pending_duel.take() {
             let duelist = self
                 .data
@@ -783,32 +720,6 @@ impl Game {
             .collect()
     }
 
-    /// A deterministic sample encounter for engine testing from the menu.
-    fn start_dev_battle(&mut self) {
-        let wave = self.session.battles_fought % 3;
-        let enemy: Vec<UnitSpec> = match wave {
-            0 => vec![wild("bumblit"), wild("bumblit")],
-            1 => vec![wild("pangol")],
-            _ => vec![
-                armed(
-                    "pangol",
-                    vec![
-                        ("arm_l", 0, "ember_spitter"),
-                        ("back", 0, "basalt_carapace"),
-                    ],
-                ),
-                wild("volpi"),
-            ],
-        };
-        let context = if wave == 2 {
-            BattleContext::FactoryDismantle
-        } else {
-            BattleContext::WildSubdue
-        };
-        self.return_to = ReturnTo::Menu;
-        self.start_battle(context, enemy);
-    }
-
     fn save_game(&mut self) {
         let save = SaveData::from_session(&self.session, &self.data.config.version);
         match save_to_slot_with_version(
@@ -840,32 +751,5 @@ impl Game {
             }
             Err(err) => self.notifications.warning(format!("Load failed: {}", err)),
         }
-    }
-}
-
-fn wild(species: &str) -> UnitSpec {
-    UnitSpec {
-        species_id: species.to_owned(),
-        name: format!("wild {}", species),
-        side: Side::Enemy,
-        creature_id: None,
-        bond: 0.0,
-        stance: Stance::Aggressive,
-        grafts: Vec::new(),
-    }
-}
-
-fn armed(species: &str, grafts: Vec<(&str, usize, &str)>) -> UnitSpec {
-    UnitSpec {
-        species_id: species.to_owned(),
-        name: format!("war-unit {}", species),
-        side: Side::Enemy,
-        creature_id: None,
-        bond: 0.0,
-        stance: Stance::Aggressive,
-        grafts: grafts
-            .into_iter()
-            .map(|(l, s, d)| (l.to_owned(), s, d.to_owned(), None))
-            .collect(),
     }
 }

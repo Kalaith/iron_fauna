@@ -55,6 +55,9 @@ pub struct GameSession {
     /// Story progression flags set by dialogue and events.
     #[serde(default)]
     pub story_flags: std::collections::HashSet<String>,
+    /// Accepted / in-progress / finished quests.
+    #[serde(default)]
+    pub quests: crate::model::quest::QuestLog,
 }
 
 impl GameSession {
@@ -95,6 +98,7 @@ impl GameSession {
             steps: 0,
             world_state: Default::default(),
             story_flags: Default::default(),
+            quests: Default::default(),
         }
     }
 }

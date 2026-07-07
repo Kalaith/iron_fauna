@@ -101,6 +101,31 @@ pub struct WarpDef {
     pub to_y: i32,
 }
 
+/// Which part of a settlement a building door opens into. Defaults to the
+/// full hub so plain `s` doors (and other towns) behave as before.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DoorTarget {
+    #[default]
+    Hub,
+    Bench,
+    Shop,
+    Ring,
+}
+
+/// A labelled settlement door: stepping onto its tile opens `target` directly,
+/// turning a town into distinct enterable buildings (§10).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DoorDef {
+    pub x: i32,
+    pub y: i32,
+    #[serde(default)]
+    pub target: DoorTarget,
+    /// Sign text drawn above the door in the overworld.
+    #[serde(default)]
+    pub label: Option<String>,
+}
+
 /// A condition gating a dialogue rule. Empty fields don't constrain.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct DialogueCond {
@@ -119,6 +144,18 @@ pub struct DialogueCond {
     /// This factory must (true) / must not (false) be in relapse.
     #[serde(default)]
     pub relapsed: Option<(String, bool)>,
+    /// This quest must be started and still in progress.
+    #[serde(default)]
+    pub quest_active: Option<String>,
+    /// This quest's objective must be met, awaiting turn-in.
+    #[serde(default)]
+    pub quest_ready: Option<String>,
+    /// This quest must be fully finished (reward claimed).
+    #[serde(default)]
+    pub quest_done: Option<String>,
+    /// This quest must never have been engaged (offer gate).
+    #[serde(default)]
+    pub quest_none: Option<String>,
 }
 
 /// One conditional dialogue variant. The first rule whose condition passes
@@ -136,6 +173,12 @@ pub struct DialogueRule {
     pub give_scrip: i64,
     #[serde(default)]
     pub give_grafts: Vec<String>,
+    /// Accept this quest when the dialogue closes.
+    #[serde(default)]
+    pub start_quest: Option<String>,
+    /// Turn in this quest when the dialogue closes, granting its reward.
+    #[serde(default)]
+    pub complete_quest: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -167,6 +210,9 @@ pub struct MapDef {
     pub encounters: Vec<EncounterEntry>,
     #[serde(default)]
     pub warps: Vec<WarpDef>,
+    /// Building doors that open a specific settlement facility (§10).
+    #[serde(default)]
+    pub doors: Vec<DoorDef>,
     #[serde(default)]
     pub npcs: Vec<NpcDef>,
     /// Which settlement the `s` doors open (placeholder: outfit bench).
@@ -209,6 +255,10 @@ impl MapDef {
 
     pub fn npc_at(&self, x: i32, y: i32) -> Option<&NpcDef> {
         self.npcs.iter().find(|n| n.x == x && n.y == y)
+    }
+
+    pub fn door_at(&self, x: i32, y: i32) -> Option<&DoorDef> {
+        self.doors.iter().find(|d| d.x == x && d.y == y)
     }
 }
 
@@ -285,6 +335,21 @@ mod tests {
                     warp.to_map
                 );
             }
+            for door in &map.doors {
+                assert_eq!(
+                    map.tile(door.x, door.y),
+                    super::TileKind::SettlementDoor,
+                    "{}: door at {},{} is not a settlement door tile",
+                    map.id,
+                    door.x,
+                    door.y
+                );
+                assert!(
+                    map.settlement.is_some(),
+                    "{}: has doors but no settlement",
+                    map.id
+                );
+            }
             for e in &map.encounters {
                 assert!(
                     data.species.contains(&e.species),
@@ -313,6 +378,25 @@ mod tests {
                             npc.id,
                             def
                         );
+                    }
+                    for q in [&rule.start_quest, &rule.complete_quest]
+                        .into_iter()
+                        .flatten()
+                    {
+                        assert!(data.quests.contains(q), "{}: unknown quest {}", npc.id, q);
+                    }
+                    if let Some(cond) = &rule.when {
+                        for q in [
+                            &cond.quest_active,
+                            &cond.quest_ready,
+                            &cond.quest_done,
+                            &cond.quest_none,
+                        ]
+                        .into_iter()
+                        .flatten()
+                        {
+                            assert!(data.quests.contains(q), "{}: unknown quest {}", npc.id, q);
+                        }
                     }
                     if let Some(cond) = &rule.when {
                         if let Some((factory, verdict)) = &cond.verdict {

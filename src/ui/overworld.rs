@@ -3,7 +3,7 @@
 
 use crate::combat::unit::UnitSpec;
 use crate::combat::{Side, Stance};
-use crate::data::world::{DialogueRule, MapDef, MapKind, TileKind};
+use crate::data::world::{DialogueRule, DoorTarget, MapDef, MapKind, TileKind};
 use crate::data::GameData;
 use crate::model::story;
 use crate::model::warunit::war_unit_grafts;
@@ -15,12 +15,15 @@ use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
 
+mod tiles;
+use tiles::draw_tile;
+
 const TILE: f32 = 40.0;
 
 pub enum OverworldResult {
     Continue,
-    /// Stepped through a settlement door — open the bench.
-    OpenSettlement,
+    /// Stepped through a settlement door — open the facility it leads to.
+    OpenSettlement(DoorTarget),
     /// Walked into a wild pack (or a factory patrol).
     StartEncounter(Vec<UnitSpec>),
     /// Interacted with a factory heart.
@@ -50,6 +53,10 @@ impl DialogueBox {
 pub struct OverworldScreen {
     move_timer: f32,
     facing: (i32, i32),
+    /// Drawn position in tile units — glides toward the logical (grid) tile so
+    /// movement and camera read as continuous while the sim stays grid-locked.
+    visual_x: f32,
+    visual_y: f32,
     dialogue: Option<DialogueBox>,
     rng: Rng,
 }
@@ -59,6 +66,8 @@ impl OverworldScreen {
         Self {
             move_timer: 0.0,
             facing: (0, 1),
+            visual_x: session.location.x as f32,
+            visual_y: session.location.y as f32,
             dialogue: None,
             rng: Rng::new(
                 0x9E37_79B9_7F4A_7C15
@@ -81,6 +90,13 @@ impl OverworldScreen {
         let Some(map) = data.world.map(&session.location.map_id) else {
             return OverworldResult::BackToMenu;
         };
+
+        // Glide the drawn position toward the logical tile every frame. Speed is
+        // one tile per step interval, so the sprite arrives exactly as the next
+        // grid step unlocks — holding a direction reads as one smooth walk.
+        let glide = dt / step_time(data, session);
+        self.visual_x = approach(self.visual_x, session.location.x as f32, glide);
+        self.visual_y = approach(self.visual_y, session.location.y as f32, glide);
 
         // Dialogue swallows input until dismissed.
         if let Some(dialog) = &mut self.dialogue {
@@ -124,6 +140,7 @@ impl OverworldScreen {
                         session.location.map_id = warp.to_map.clone();
                         session.location.x = warp.to_x;
                         session.location.y = warp.to_y;
+                        self.snap_visual(session);
                     } else {
                         self.dialogue = Some(DialogueBox::plain(
                             "Sealed Doors",
@@ -151,7 +168,13 @@ impl OverworldScreen {
             if self.move_timer <= 0.0 {
                 let nx = session.location.x + dir.0;
                 let ny = session.location.y + dir.1;
-                if map.walkable(nx, ny) {
+                // On a diagonal, refuse to squeeze between two walls — both
+                // orthogonal neighbours blocked means there's no real gap.
+                let cut_corner = dir.0 != 0
+                    && dir.1 != 0
+                    && !map.walkable(session.location.x + dir.0, session.location.y)
+                    && !map.walkable(session.location.x, session.location.y + dir.1);
+                if map.walkable(nx, ny) && !cut_corner {
                     session.location.x = nx;
                     session.location.y = ny;
                     session.steps += 1;
@@ -182,11 +205,16 @@ impl OverworldScreen {
                         session.location.map_id = warp.to_map.clone();
                         session.location.x = warp.to_x;
                         session.location.y = warp.to_y;
+                        self.snap_visual(session);
                         return OverworldResult::Continue;
                     }
                     let tile = map.tile(nx, ny);
                     if tile == TileKind::SettlementDoor {
-                        return OverworldResult::OpenSettlement;
+                        let target = map
+                            .door_at(nx, ny)
+                            .map(|d| d.target)
+                            .unwrap_or(DoorTarget::Hub);
+                        return OverworldResult::OpenSettlement(target);
                     }
                     if tile.encounter_prone() {
                         let rate = effective_encounter_rate(map, data, session);
@@ -209,16 +237,26 @@ impl OverworldScreen {
         OverworldResult::Continue
     }
 
+    /// Teleports (warps, door transits) must not glide across the gap — pin the
+    /// drawn position to the new tile so the next map starts settled.
+    fn snap_visual(&mut self, session: &GameSession) {
+        self.visual_x = session.location.x as f32;
+        self.visual_y = session.location.y as f32;
+    }
+
     pub fn draw(&self, data: &GameData, session: &GameSession) {
         let Some(map) = data.world.map(&session.location.map_id) else {
             return;
         };
 
-        // Camera: center on player, clamped to the map bounds.
-        let view_w = (LOGICAL_WIDTH / TILE).ceil() as i32;
-        let view_h = (LOGICAL_HEIGHT / TILE).ceil() as i32;
-        let cam_x = (session.location.x - view_w / 2).clamp(0, (map.width() - view_w).max(0));
-        let cam_y = (session.location.y - view_h / 2).clamp(0, (map.height() - view_h).max(0));
+        // Camera: center on the (gliding) player in tile units, clamped to the
+        // map bounds. Kept as a float so scrolling tracks the smooth position.
+        let view_w = LOGICAL_WIDTH / TILE;
+        let view_h = LOGICAL_HEIGHT / TILE;
+        let cam_x =
+            (self.visual_x - view_w * 0.5).clamp(0.0, (map.width() as f32 - view_w).max(0.0));
+        let cam_y =
+            (self.visual_y - view_h * 0.5).clamp(0.0, (map.height() as f32 - view_h).max(0.0));
 
         let mood = match map.kind {
             MapKind::Factory => RegionMood::Threatened,
@@ -229,27 +267,55 @@ impl OverworldScreen {
         } else {
             Color::new(0.05, 0.06, 0.05, 1.0)
         });
-        for ty in cam_y..(cam_y + view_h + 1).min(map.height()) {
-            for tx in cam_x..(cam_x + view_w + 1).min(map.width()) {
-                let px = (tx - cam_x) as f32 * TILE;
-                let py = (ty - cam_y) as f32 * TILE;
+        let first_tx = cam_x.floor() as i32;
+        let first_ty = cam_y.floor() as i32;
+        for ty in first_ty..(first_ty + view_h.ceil() as i32 + 2).min(map.height()) {
+            for tx in first_tx..(first_tx + view_w.ceil() as i32 + 2).min(map.width()) {
+                let px = (tx as f32 - cam_x) * TILE;
+                let py = (ty as f32 - cam_y) * TILE;
                 draw_tile(map.tile(tx, ty), px, py, tx, ty, map.kind, mood);
             }
         }
 
-        for npc in &map.npcs {
-            if npc.x < cam_x || npc.y < cam_y {
+        // Building signs: label each door so the town reads as distinct shops.
+        for door in &map.doors {
+            let Some(label) = &door.label else { continue };
+            let px = (door.x as f32 - cam_x) * TILE + TILE * 0.5;
+            let py = (door.y as f32 - cam_y) * TILE;
+            if px < -TILE || py < -TILE || px > LOGICAL_WIDTH + TILE || py > LOGICAL_HEIGHT + TILE {
                 continue;
             }
-            let px = (npc.x - cam_x) as f32 * TILE + TILE * 0.5;
-            let py = (npc.y - cam_y) as f32 * TILE + TILE * 0.5;
+            let w = label.len() as f32 * 7.5 + 12.0;
+            draw_rectangle(
+                px - w * 0.5,
+                py - 20.0,
+                w,
+                17.0,
+                Color::new(0.0, 0.0, 0.0, 0.6),
+            );
+            draw_text_centered_in_box_ex(
+                label,
+                px - w * 0.5,
+                py - 20.0,
+                w,
+                17.0,
+                TextStyle::new(13.0, Color::new(0.90, 0.82, 0.62, 1.0)),
+            );
+        }
+
+        for npc in &map.npcs {
+            let px = (npc.x as f32 - cam_x) * TILE + TILE * 0.5;
+            let py = (npc.y as f32 - cam_y) * TILE + TILE * 0.5;
+            if px < -TILE || py < -TILE || px > LOGICAL_WIDTH + TILE || py > LOGICAL_HEIGHT + TILE {
+                continue;
+            }
             draw_circle(px, py - 6.0, 9.0, Color::new(0.80, 0.70, 0.55, 1.0));
             draw_rectangle(px - 7.0, py, 14.0, 14.0, Color::new(0.45, 0.40, 0.55, 1.0));
         }
 
-        // Player.
-        let px = (session.location.x - cam_x) as f32 * TILE + TILE * 0.5;
-        let py = (session.location.y - cam_y) as f32 * TILE + TILE * 0.5;
+        // Player, drawn at the smooth (gliding) position.
+        let px = (self.visual_x - cam_x) * TILE + TILE * 0.5;
+        let py = (self.visual_y - cam_y) * TILE + TILE * 0.5;
         draw_circle(px, py - 7.0, 9.0, Color::new(0.92, 0.85, 0.72, 1.0));
         draw_rectangle(
             px - 7.0,
@@ -285,6 +351,19 @@ impl OverworldScreen {
             33.0,
             TextStyle::new(18.0, dark::TEXT_BRIGHT).params(),
         );
+
+        // Quest tracker: the accepted objective, or a turn-in prompt.
+        if let Some(line) = crate::model::quest::tracker_line(session, data) {
+            let gold = Color::new(0.95, 0.82, 0.45, 1.0);
+            draw_rectangle(12.0, 48.0, 380.0, 26.0, Color::new(0.0, 0.0, 0.0, 0.5));
+            draw_rectangle(12.0, 48.0, 4.0, 26.0, gold);
+            draw_ui_text_ex(
+                &format!("Quest: {}", line),
+                24.0,
+                66.0,
+                TextStyle::new(15.0, gold).params(),
+            );
+        }
 
         // Objective hint: what this region wants of the player right now.
         let (hint, color) = region_objective(data, session, map);
@@ -387,17 +466,37 @@ fn region_objective(data: &GameData, session: &GameSession, map: &MapDef) -> (St
     }
 }
 
+/// Combine held keys into an 8-way step; opposite keys cancel so pressing
+/// left+right (or up+down) leaves that axis neutral.
 fn held_direction() -> Option<(i32, i32)> {
+    let mut dx = 0;
+    let mut dy = 0;
     if is_key_down(KeyCode::Left) || is_key_down(KeyCode::A) {
-        Some((-1, 0))
-    } else if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) {
-        Some((1, 0))
-    } else if is_key_down(KeyCode::Up) || is_key_down(KeyCode::W) {
-        Some((0, -1))
-    } else if is_key_down(KeyCode::Down) || is_key_down(KeyCode::S) {
-        Some((0, 1))
-    } else {
+        dx -= 1;
+    }
+    if is_key_down(KeyCode::Right) || is_key_down(KeyCode::D) {
+        dx += 1;
+    }
+    if is_key_down(KeyCode::Up) || is_key_down(KeyCode::W) {
+        dy -= 1;
+    }
+    if is_key_down(KeyCode::Down) || is_key_down(KeyCode::S) {
+        dy += 1;
+    }
+    if dx == 0 && dy == 0 {
         None
+    } else {
+        Some((dx, dy))
+    }
+}
+
+/// Move `cur` toward `target` by at most `max_delta`, snapping on arrival.
+fn approach(cur: f32, target: f32, max_delta: f32) -> f32 {
+    let d = target - cur;
+    if d.abs() <= max_delta {
+        target
+    } else {
+        cur + d.signum() * max_delta
     }
 }
 
@@ -486,223 +585,6 @@ fn roll_encounter(
             })
             .collect(),
     )
-}
-
-/// Region moods tint the land (`game_design.md` §9.2): purged ground grays
-/// out, reseeded ground blooms.
-fn mood_tint(mood: RegionMood) -> (f32, f32, f32) {
-    match mood {
-        RegionMood::Threatened => (1.0, 1.0, 1.0),
-        RegionMood::Dead => (1.0, 0.72, 0.65),
-        RegionMood::Reviving => (0.9, 1.25, 0.9),
-        RegionMood::Claimed => (1.0, 0.95, 1.15),
-        RegionMood::Relapsed => (1.25, 0.8, 0.75),
-    }
-}
-
-fn tinted(c: Color, t: (f32, f32, f32)) -> Color {
-    Color::new(
-        (c.r * t.0).min(1.0),
-        (c.g * t.1).min(1.0),
-        (c.b * t.2).min(1.0),
-        c.a,
-    )
-}
-
-fn draw_tile(
-    kind: TileKind,
-    px: f32,
-    py: f32,
-    tx: i32,
-    ty: i32,
-    map_kind: MapKind,
-    mood: RegionMood,
-) {
-    // Deterministic per-tile jitter for texture without an RNG.
-    let h = ((tx.wrapping_mul(73_856_093) ^ ty.wrapping_mul(19_349_663)) as u32 >> 8) as f32
-        / 16_777_216.0;
-    let t = mood_tint(mood);
-    match kind {
-        TileKind::Ground => {
-            draw_rectangle(
-                px,
-                py,
-                TILE,
-                TILE,
-                tinted(Color::new(0.16, 0.19, 0.13, 1.0), t),
-            );
-            if h > 0.8 {
-                draw_circle(
-                    px + TILE * 0.3,
-                    py + TILE * 0.6,
-                    2.0,
-                    tinted(Color::new(0.20, 0.24, 0.16, 1.0), t),
-                );
-            }
-        }
-        TileKind::Path => {
-            draw_rectangle(
-                px,
-                py,
-                TILE,
-                TILE,
-                tinted(Color::new(0.26, 0.22, 0.16, 1.0), t),
-            );
-        }
-        TileKind::Grass => {
-            draw_rectangle(
-                px,
-                py,
-                TILE,
-                TILE,
-                tinted(Color::new(0.11, 0.23, 0.12, 1.0), t),
-            );
-            let sway = h * 6.0;
-            draw_line(
-                px + 8.0 + sway,
-                py + TILE - 6.0,
-                px + 10.0 + sway,
-                py + 10.0,
-                2.0,
-                tinted(Color::new(0.16, 0.33, 0.17, 1.0), t),
-            );
-            draw_line(
-                px + 24.0 + sway,
-                py + TILE - 6.0,
-                px + 26.0 + sway,
-                py + 14.0,
-                2.0,
-                tinted(Color::new(0.14, 0.30, 0.15, 1.0), t),
-            );
-        }
-        TileKind::Tree => {
-            if map_kind == MapKind::Factory {
-                // Factory walls: riveted plating, not trees.
-                draw_rectangle(px, py, TILE, TILE, Color::new(0.13, 0.13, 0.16, 1.0));
-                draw_rectangle_lines(px, py, TILE, TILE, 2.0, Color::new(0.20, 0.20, 0.24, 1.0));
-            } else {
-                draw_rectangle(
-                    px,
-                    py,
-                    TILE,
-                    TILE,
-                    tinted(Color::new(0.09, 0.13, 0.09, 1.0), t),
-                );
-                draw_circle(
-                    px + TILE * 0.5,
-                    py + TILE * 0.4,
-                    TILE * 0.38,
-                    tinted(Color::new(0.07, 0.17, 0.10, 1.0), t),
-                );
-            }
-        }
-        TileKind::DeckPlate => {
-            draw_rectangle(px, py, TILE, TILE, Color::new(0.11, 0.115, 0.13, 1.0));
-            if h > 0.7 {
-                draw_line(
-                    px + 4.0,
-                    py + TILE - 4.0,
-                    px + TILE - 4.0,
-                    py + TILE - 4.0,
-                    1.0,
-                    Color::new(0.16, 0.165, 0.19, 1.0),
-                );
-            }
-        }
-        TileKind::VatSpill => {
-            draw_rectangle(px, py, TILE, TILE, Color::new(0.10, 0.14, 0.11, 1.0));
-            draw_circle(
-                px + TILE * 0.5,
-                py + TILE * 0.55,
-                TILE * 0.32,
-                Color::new(0.18, 0.34, 0.20, 0.9),
-            );
-            draw_circle(
-                px + TILE * 0.4,
-                py + TILE * 0.45,
-                TILE * 0.12,
-                Color::new(0.30, 0.55, 0.30, 0.8),
-            );
-        }
-        TileKind::Vat => {
-            draw_rectangle(px, py, TILE, TILE, Color::new(0.10, 0.11, 0.13, 1.0));
-            draw_rectangle(
-                px + 6.0,
-                py + 3.0,
-                TILE - 12.0,
-                TILE - 6.0,
-                Color::new(0.16, 0.22, 0.24, 1.0),
-            );
-            // The small sleeping core inside — the horror is that it's cute.
-            draw_circle(
-                px + TILE * 0.5,
-                py + TILE * 0.5,
-                6.0,
-                Color::new(0.85, 0.65, 0.70, 0.9),
-            );
-        }
-        TileKind::Heart => {
-            draw_rectangle(px, py, TILE, TILE, Color::new(0.12, 0.08, 0.10, 1.0));
-            draw_circle(
-                px + TILE * 0.5,
-                py + TILE * 0.5,
-                TILE * 0.42,
-                Color::new(0.45, 0.16, 0.22, 1.0),
-            );
-            draw_circle(
-                px + TILE * 0.5,
-                py + TILE * 0.5,
-                TILE * 0.22,
-                Color::new(0.75, 0.30, 0.38, 1.0),
-            );
-        }
-        TileKind::Water => {
-            draw_rectangle(px, py, TILE, TILE, Color::new(0.10, 0.18, 0.30, 1.0));
-            draw_line(
-                px + 6.0,
-                py + TILE * 0.5 + h * 8.0,
-                px + TILE - 6.0,
-                py + TILE * 0.5 + h * 8.0,
-                1.5,
-                Color::new(0.16, 0.26, 0.40, 1.0),
-            );
-        }
-        TileKind::Rock => {
-            draw_rectangle(px, py, TILE, TILE, Color::new(0.16, 0.16, 0.17, 1.0));
-            draw_circle(
-                px + TILE * 0.5,
-                py + TILE * 0.55,
-                TILE * 0.3,
-                Color::new(0.24, 0.24, 0.26, 1.0),
-            );
-        }
-        TileKind::SettlementDoor => {
-            draw_rectangle(px, py, TILE, TILE, Color::new(0.30, 0.24, 0.15, 1.0));
-            draw_rectangle(
-                px + 10.0,
-                py + 6.0,
-                TILE - 20.0,
-                TILE - 12.0,
-                Color::new(0.45, 0.35, 0.20, 1.0),
-            );
-        }
-        TileKind::GestariumDoor => {
-            draw_rectangle(px, py, TILE, TILE, Color::new(0.14, 0.10, 0.12, 1.0));
-            draw_rectangle(
-                px + 6.0,
-                py + 4.0,
-                TILE - 12.0,
-                TILE - 8.0,
-                Color::new(0.28, 0.14, 0.18, 1.0),
-            );
-            draw_circle(
-                px + TILE * 0.5,
-                py + TILE * 0.5,
-                4.0,
-                Color::new(0.65, 0.30, 0.30, 1.0),
-            );
-        }
-    }
 }
 
 fn draw_dialogue(dialog: &DialogueBox) {

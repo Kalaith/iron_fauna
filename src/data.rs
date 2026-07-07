@@ -3,6 +3,7 @@
 pub mod balance;
 pub mod factory;
 pub mod graftware;
+pub mod quest;
 pub mod settlement;
 pub mod species;
 pub mod world;
@@ -14,6 +15,7 @@ use macroquad_toolkit::assets::TextureConfig;
 use macroquad_toolkit::data_loader::{
     load_embedded_json, load_embedded_json_labeled, DataRegistry,
 };
+use quest::QuestDef;
 use serde::{Deserialize, Serialize};
 use settlement::SettlementDef;
 use species::SpeciesDef;
@@ -25,6 +27,7 @@ const SPECIES_JSON: &str = include_str!("../assets/data/species.json");
 const GRAFTWARE_JSON: &str = include_str!("../assets/data/graftware.json");
 const WORLD_JSON: &str = include_str!("../assets/data/world.json");
 const SETTLEMENTS_JSON: &str = include_str!("../assets/data/settlements.json");
+const QUESTS_JSON: &str = include_str!("../assets/data/quests.json");
 const FACTORIES_JSON: &str = include_str!("../assets/data/factories.json");
 /// Per-region content packs — separate files so regions can be authored
 /// independently; merged into the same registries at load.
@@ -79,6 +82,7 @@ pub struct GameData {
     pub graftware: DataRegistry<GraftwareDef>,
     pub world: WorldDef,
     pub settlements: DataRegistry<SettlementDef>,
+    pub quests: DataRegistry<QuestDef>,
     pub factories: DataRegistry<FactoryDef>,
     pub texture_manifest: Vec<TextureConfig>,
 }
@@ -92,6 +96,7 @@ impl GameData {
         let mut world: WorldDef = load_embedded_json_labeled("world", WORLD_JSON)?;
         let mut settlements: DataRegistry<SettlementDef> =
             DataRegistry::from_embedded_json(SETTLEMENTS_JSON, "id")?;
+        let quests: DataRegistry<QuestDef> = DataRegistry::from_embedded_json(QUESTS_JSON, "id")?;
         let mut factories: DataRegistry<FactoryDef> =
             DataRegistry::from_embedded_json(FACTORIES_JSON, "id")?;
         let texture_manifest = load_embedded_json(TEXTURE_MANIFEST_JSON)?;
@@ -125,6 +130,7 @@ impl GameData {
             graftware,
             world,
             settlements,
+            quests,
             factories,
             texture_manifest,
         })
