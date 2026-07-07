@@ -3,6 +3,7 @@
 pub mod creature;
 pub mod duel;
 pub mod inventory;
+pub mod journal;
 pub mod party;
 pub mod quest;
 pub mod rider;

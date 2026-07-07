@@ -7,6 +7,7 @@ pub mod ledger;
 pub mod outfit;
 pub mod overworld;
 pub mod settlement;
+pub mod skin;
 pub mod verdict;
 
 use crate::data::species::Element;
@@ -55,13 +56,17 @@ pub fn draw_main_menu(ctx: &MenuContext<'_>) -> Vec<UiAction> {
     let mut actions = Vec::new();
     let mouse = ctx.ui.mouse_position();
 
-    // Title block.
-    draw_ui_text_ex(
-        "IRON FAUNA",
-        80.0,
-        160.0,
-        TextStyle::new(64.0, Color::new(0.85, 0.88, 0.92, 1.0)).params(),
-    );
+    // Title block — a skinned banner behind the wordmark when available.
+    if skin::available() {
+        skin::banner(Rect::new(72.0, 96.0, 460.0, 76.0), "IRON FAUNA", 52.0);
+    } else {
+        draw_ui_text_ex(
+            "IRON FAUNA",
+            80.0,
+            160.0,
+            TextStyle::new(64.0, Color::new(0.85, 0.88, 0.92, 1.0)).params(),
+        );
+    }
     draw_ui_text_ex(
         "hold the line. mind what it costs.",
         84.0,
@@ -102,6 +107,15 @@ pub fn draw_main_menu(ctx: &MenuContext<'_>) -> Vec<UiAction> {
         ),
     ];
 
+    // A skinned panel frames the button column when the sprite skin is loaded.
+    if skin::available() {
+        skin::panel(Rect::new(
+            68.0,
+            270.0,
+            312.0,
+            buttons.len() as f32 * 46.0 + 20.0,
+        ));
+    }
     for (i, (label, action, enabled)) in buttons.iter().enumerate() {
         let rect = Rect::new(84.0, 282.0 + i as f32 * 46.0, 280.0, 38.0);
         if menu_button(rect, label, *enabled, mouse) {
@@ -163,6 +177,10 @@ pub fn draw_main_menu(ctx: &MenuContext<'_>) -> Vec<UiAction> {
 }
 
 pub fn menu_button(rect: Rect, text: &str, enabled: bool, mouse: Vec2) -> bool {
+    // Prefer the sprite skin when it's loaded; fall back to the flat draw.
+    if skin::available() {
+        return skin::button(rect, text, enabled, mouse);
+    }
     let hovered = enabled && rect.contains_point(mouse);
     let pressed = hovered && is_mouse_button_down(MouseButton::Left);
     let fill = if !enabled {

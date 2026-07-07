@@ -99,6 +99,21 @@ impl Roster {
         self.party.retain(|p| *p != id);
         self.party.len() != before
     }
+
+    /// Shift a party member one slot earlier (`dir == -1`) or later (`dir == 1`).
+    /// Party order is the battle line-up and the stance-key order, so the rider
+    /// can arrange it. No-op at the ends. Returns whether anything moved.
+    pub fn move_in_party(&mut self, id: u64, dir: i32) -> bool {
+        let Some(i) = self.party.iter().position(|p| *p == id) else {
+            return false;
+        };
+        let j = i as i32 + dir;
+        if j < 0 || j as usize >= self.party.len() {
+            return false;
+        }
+        self.party.swap(i, j as usize);
+        true
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

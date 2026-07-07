@@ -12,6 +12,7 @@ use crate::state::GameSession;
 use crate::ui::{LOGICAL_HEIGHT, LOGICAL_WIDTH};
 use crate::util::Rng;
 use macroquad::prelude::*;
+use macroquad_toolkit::assets::AssetManager;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
 
@@ -244,7 +245,7 @@ impl OverworldScreen {
         self.visual_y = session.location.y as f32;
     }
 
-    pub fn draw(&self, data: &GameData, session: &GameSession) {
+    pub fn draw(&self, data: &GameData, session: &GameSession, assets: &AssetManager) {
         let Some(map) = data.world.map(&session.location.map_id) else {
             return;
         };
@@ -273,7 +274,14 @@ impl OverworldScreen {
             for tx in first_tx..(first_tx + view_w.ceil() as i32 + 2).min(map.width()) {
                 let px = (tx as f32 - cam_x) * TILE;
                 let py = (ty as f32 - cam_y) * TILE;
-                draw_tile(map.tile(tx, ty), px, py, tx, ty, map.kind, mood);
+                draw_tile(
+                    assets,
+                    map.tile(tx, ty),
+                    vec2(px, py),
+                    (tx, ty),
+                    map.kind,
+                    mood,
+                );
             }
         }
 
@@ -365,25 +373,6 @@ impl OverworldScreen {
             );
         }
 
-        // Objective hint: what this region wants of the player right now.
-        let (hint, color) = region_objective(data, session, map);
-        let hw = hint.len() as f32 * 8.0 + 40.0;
-        draw_rectangle(
-            LOGICAL_WIDTH * 0.5 - hw * 0.5,
-            10.0,
-            hw,
-            30.0,
-            Color::new(0.0, 0.0, 0.0, 0.55),
-        );
-        draw_text_centered_in_box_ex(
-            &hint,
-            LOGICAL_WIDTH * 0.5 - hw * 0.5,
-            10.0,
-            hw,
-            30.0,
-            TextStyle::new(16.0, color),
-        );
-
         draw_rectangle(
             12.0,
             LOGICAL_HEIGHT - 40.0,
@@ -397,72 +386,6 @@ impl OverworldScreen {
             LOGICAL_HEIGHT - 19.0,
             TextStyle::new(15.0, dark::TEXT_DIM).params(),
         );
-    }
-}
-
-/// The current region's live objective, derived from world state — turns the
-/// open world into something legible without hard gates.
-fn region_objective(data: &GameData, session: &GameSession, map: &MapDef) -> (String, Color) {
-    let amber = Color::new(0.95, 0.82, 0.45, 1.0);
-    let red = Color::new(0.95, 0.45, 0.4, 1.0);
-    let green = Color::new(0.55, 0.85, 0.55, 1.0);
-    let grey = Color::new(0.7, 0.72, 0.75, 1.0);
-    let purple = Color::new(0.72, 0.6, 0.9, 1.0);
-
-    if map.kind == MapKind::Factory {
-        if let Some(fid) = &map.factory_id {
-            let f = session.world_state.factory(fid);
-            if !f.heart_defeated {
-                return ("Descend to the heart and silence it.".to_owned(), amber);
-            }
-            return (
-                "The vats are still. Nothing left to fight here.".to_owned(),
-                grey,
-            );
-        }
-    }
-
-    let Some(region) = data.world.region(&map.region) else {
-        return (String::new(), grey);
-    };
-    let f = session.world_state.factory(&region.gestarium_id);
-    let fname = data
-        .factories
-        .get(&region.gestarium_id)
-        .map(|d| d.name.clone())
-        .unwrap_or_else(|| "the factory".to_owned());
-
-    if !f.heart_defeated {
-        (
-            format!("{} still births war-units. Raid its heart.", fname),
-            amber,
-        )
-    } else if f.verdict.is_none() {
-        (
-            format!("{} lies silent — return to pass judgment.", fname),
-            amber,
-        )
-    } else if f.relapsed {
-        (
-            "This region has RELAPSED. Confront the keeper at the heart.".to_owned(),
-            red,
-        )
-    } else if matches!(f.verdict, Some(crate::model::worldstate::Verdict::Reseed)) && !f.invested {
-        (
-            "Revived — fund the Watch before prosperity forgets.".to_owned(),
-            green,
-        )
-    } else {
-        match f.verdict {
-            Some(crate::model::worldstate::Verdict::Purge) => (
-                "At peace. Dead peace, but peace. Your verdict holds.".to_owned(),
-                grey,
-            ),
-            Some(crate::model::worldstate::Verdict::Bind) => {
-                ("The factory answers to you now.".to_owned(), purple)
-            }
-            _ => ("Thriving under your watch.".to_owned(), green),
-        }
     }
 }
 

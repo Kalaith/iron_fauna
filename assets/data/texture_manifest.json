@@ -1,1 +1,25 @@
-[]
+[
+  { "key": "terrain_green", "path": "assets/textures/terrain_green.png", "filter": "nearest" },
+  { "key": "terrain_dark", "path": "assets/textures/terrain_dark.png", "filter": "nearest" },
+  { "key": "terrain_bleak", "path": "assets/textures/terrain_bleak.png", "filter": "nearest" },
+  { "key": "buildings_gray", "path": "assets/textures/buildings_gray.png", "filter": "nearest" },
+  { "key": "tree_green", "path": "assets/textures/tree_green.png", "filter": "nearest" },
+  { "key": "tree_dark_green", "path": "assets/textures/tree_dark_green.png", "filter": "nearest" },
+  { "key": "tree_bleak_yellow", "path": "assets/textures/tree_bleak_yellow.png", "filter": "nearest" },
+  { "key": "tree2_green", "path": "assets/textures/tree2_green.png", "filter": "nearest" },
+  { "key": "tree2_dark_green", "path": "assets/textures/tree2_dark_green.png", "filter": "nearest" },
+  { "key": "tree2_bleak_yellow", "path": "assets/textures/tree2_bleak_yellow.png", "filter": "nearest" },
+  { "key": "bush_green", "path": "assets/textures/bush_green.png", "filter": "nearest" },
+  { "key": "bush_dark_green", "path": "assets/textures/bush_dark_green.png", "filter": "nearest" },
+  { "key": "bush_bleak_yellow", "path": "assets/textures/bush_bleak_yellow.png", "filter": "nearest" },
+  { "key": "entrance_green", "path": "assets/textures/entrance_green.png", "filter": "nearest" },
+  { "key": "entrance_dark_green", "path": "assets/textures/entrance_dark_green.png", "filter": "nearest" },
+  { "key": "entrance_bleak_yellow", "path": "assets/textures/entrance_bleak_yellow.png", "filter": "nearest" },
+  { "key": "door_metal", "path": "assets/textures/door_metal.png", "filter": "nearest" },
+  { "key": "ui_btn", "path": "assets/textures/ui/btn.png", "filter": "nearest" },
+  { "key": "ui_btn_hover", "path": "assets/textures/ui/btn_hover.png", "filter": "nearest" },
+  { "key": "ui_btn_press", "path": "assets/textures/ui/btn_press.png", "filter": "nearest" },
+  { "key": "ui_btn_disabled", "path": "assets/textures/ui/btn_disabled.png", "filter": "nearest" },
+  { "key": "ui_frame", "path": "assets/textures/ui/frame.png", "filter": "nearest" },
+  { "key": "ui_banner", "path": "assets/textures/ui/banner.png", "filter": "nearest" }
+]

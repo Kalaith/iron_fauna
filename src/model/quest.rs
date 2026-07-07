@@ -59,8 +59,10 @@ pub fn start(session: &mut GameSession, data: &GameData, quest_id: &str) -> Opti
         return None;
     }
     let def = data.quests.get(quest_id)?;
+    let name = def.name.clone();
     session.quests.active.insert(quest_id.to_owned(), 0);
-    Some(format!("New quest: {}", def.name))
+    crate::model::journal::record(session, format!("Took the bounty: {}.", name));
+    Some(format!("New quest: {}", name))
 }
 
 /// Advance every active `SubdueWild` quest by `n` subdued creatures. Any quest
@@ -102,6 +104,7 @@ pub fn complete(session: &mut GameSession, data: &GameData, quest_id: &str) -> V
     };
     session.quests.ready.remove(quest_id);
     session.quests.done.insert(quest_id.to_owned());
+    crate::model::journal::record(session, format!("Saw through the bounty: {}.", def.name));
     if def.reward_scrip > 0 {
         session.profile.inventory.scrip += def.reward_scrip;
         notes.push(format!("Received {} scrip", def.reward_scrip));

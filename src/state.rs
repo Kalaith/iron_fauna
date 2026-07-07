@@ -58,6 +58,9 @@ pub struct GameSession {
     /// Accepted / in-progress / finished quests.
     #[serde(default)]
     pub quests: crate::model::quest::QuestLog,
+    /// Auto-generated chronicle of the rider's deeds (codex Journal tab).
+    #[serde(default)]
+    pub journal: Vec<crate::model::journal::JournalEntry>,
 }
 
 impl GameSession {
@@ -99,6 +102,11 @@ impl GameSession {
             world_state: Default::default(),
             story_flags: Default::default(),
             quests: Default::default(),
+            journal: vec![crate::model::journal::JournalEntry {
+                step: 0,
+                text: "Took up the road — no family waiting, so the Hollow spends me freely."
+                    .to_owned(),
+            }],
         }
     }
 }

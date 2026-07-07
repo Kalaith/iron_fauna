@@ -12,3 +12,4 @@ dist/
 *.history
 .vscode
 .gemini
+raw_sprites/

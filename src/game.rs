@@ -59,7 +59,6 @@ enum BossKind {
 pub struct Game {
     data: GameData,
     session: GameSession,
-    #[allow(dead_code)]
     assets: AssetManager,
     notifications: NotificationManager,
     audio: Audio,
@@ -82,6 +81,8 @@ impl Game {
         assets.set_placeholder_texture_direct(Texture2D::from_image(&placeholder));
         let _ = assets.load_asset_pack("assets.zip").await;
         let _ = assets.load_texture_configs(&data.texture_manifest).await;
+        // Populate the sprite UI-skin cache from the just-loaded textures.
+        ui::skin::init(&assets);
 
         let session = GameSession::new_game(&data);
         let save_exists = slot_exists(&data.config.game_name, &data.config.save_slot);
@@ -273,6 +274,16 @@ impl Game {
                             .world_state
                             .factory_mut(&factory_id)
                             .heart_defeated = true;
+                        let fname = self
+                            .data
+                            .factories
+                            .get(&factory_id)
+                            .map(|f| f.name.clone())
+                            .unwrap_or_else(|| factory_id.clone());
+                        crate::model::journal::record(
+                            &mut self.session,
+                            format!("Cracked the heart of {} and freed what it held.", fname),
+                        );
                         // Defeating a Gestarium marks the rider (§3).
                         if let Some(factory) = self.data.factories.get(&factory_id) {
                             if self.session.profile.rider.grant(factory.rider_upgrade) {
@@ -293,6 +304,10 @@ impl Game {
                         let state = self.session.world_state.factory_mut(&factory_id);
                         state.relapsed = false;
                         state.relapse_risk = 0.0;
+                        crate::model::journal::record(
+                            &mut self.session,
+                            "Put down the keeper of a region I brought back — the ground I made possible.",
+                        );
                         self.notifications.info(
                             "The new keeper yields. The region breathes again — watch it closer this time.",
                         );
@@ -341,7 +356,7 @@ impl Game {
                 };
                 actions = ui::draw_main_menu(&ctx);
             }
-            Mode::Overworld(screen) => screen.draw(&self.data, &self.session),
+            Mode::Overworld(screen) => screen.draw(&self.data, &self.session, &self.assets),
             Mode::Settlement(screen) => {
                 settlement_actions = screen.draw(&self.data, &self.session, &virtual_ui);
             }
@@ -591,6 +606,16 @@ impl Game {
             }
             VerdictAction::Choose(verdict) => {
                 self.session.world_state.factory_mut(&factory_id).verdict = Some(verdict);
+                let fname = self
+                    .data
+                    .factories
+                    .get(&factory_id)
+                    .map(|f| f.name.clone())
+                    .unwrap_or_else(|| factory_id.clone());
+                crate::model::journal::record(
+                    &mut self.session,
+                    format!("Passed {} on {}.", verdict.display_name(), fname),
+                );
                 let line = match verdict {
                     Verdict::Purge => {
                         "The wombs burn. The region is safe now — and it will never be alive again."

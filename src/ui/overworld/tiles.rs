@@ -1,9 +1,130 @@
-//! Overworld tile rendering: painting one map tile, tinted by region mood.
+//! Overworld tile rendering: painting one map tile from the PostApocalypse
+//! sprite set (ground fills from mood-variant tilesets, plus tree/rock/door
+//! objects), with a procedural fallback when textures are unavailable.
 
 use super::TILE;
 use crate::data::world::{MapKind, TileKind};
 use crate::model::worldstate::RegionMood;
 use macroquad::prelude::*;
+use macroquad_toolkit::assets::AssetManager;
+
+/// Source cell size in the background tilesets (16×16 pixel art).
+const CELL: f32 = 16.0;
+
+/// Which mood-variant tileset paints the ground.
+fn terrain_key(mood: RegionMood) -> &'static str {
+    match mood {
+        RegionMood::Reviving | RegionMood::Claimed => "terrain_green",
+        RegionMood::Threatened => "terrain_dark",
+        RegionMood::Dead | RegionMood::Relapsed => "terrain_bleak",
+    }
+}
+
+/// Matching suffix for the mood-variant object sprites (trees, bushes, doors).
+fn obj_suffix(mood: RegionMood) -> &'static str {
+    match mood {
+        RegionMood::Reviving | RegionMood::Claimed => "green",
+        RegionMood::Threatened => "dark_green",
+        RegionMood::Dead | RegionMood::Relapsed => "bleak_yellow",
+    }
+}
+
+fn tile_hash(tx: i32, ty: i32) -> f32 {
+    ((tx.wrapping_mul(73_856_093) ^ ty.wrapping_mul(19_349_663)) as u32 >> 8) as f32 / 16_777_216.0
+}
+
+/// Blit one 16×16 cell of a tileset scaled to fill a map tile.
+fn blit_cell(tex: &Texture2D, c: i32, r: i32, px: f32, py: f32, tint: Color) {
+    draw_texture_ex(
+        tex,
+        px,
+        py,
+        tint,
+        DrawTextureParams {
+            source: Some(Rect::new(c as f32 * CELL, r as f32 * CELL, CELL, CELL)),
+            dest_size: Some(vec2(TILE, TILE)),
+            ..Default::default()
+        },
+    );
+}
+
+/// Blit a free-standing object sprite, centred and bottom-anchored on the tile
+/// so tall props (trees, doorways) overhang upward onto the row above.
+fn blit_object(tex: &Texture2D, px: f32, py: f32, target_w: f32) {
+    let (tw, th) = (tex.width(), tex.height());
+    let dw = target_w;
+    let dh = th * (dw / tw);
+    draw_texture_ex(
+        tex,
+        px + (TILE - dw) * 0.5,
+        py + TILE - dh,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(dw, dh)),
+            ..Default::default()
+        },
+    );
+}
+
+/// Paint one overworld tile. Factory floors and any missing textures fall back
+/// to the procedural renderer so the game always draws something.
+pub(super) fn draw_tile(
+    assets: &AssetManager,
+    kind: TileKind,
+    pos: Vec2,
+    cell: (i32, i32),
+    map_kind: MapKind,
+    mood: RegionMood,
+) {
+    let (px, py) = (pos.x, pos.y);
+    let (tx, ty) = cell;
+    let terrain = assets.get_texture(terrain_key(mood));
+    if map_kind == MapKind::Factory || terrain.is_none() {
+        draw_tile_procedural(kind, px, py, tx, ty, map_kind, mood);
+        return;
+    }
+    let terrain = terrain.unwrap();
+    let h = tile_hash(tx, ty);
+    let obj = |name: &str| assets.get_texture(&format!("{}_{}", name, obj_suffix(mood)));
+
+    match kind {
+        TileKind::Ground => blit_cell(terrain, 5, 0, px, py, WHITE),
+        TileKind::Path => blit_cell(terrain, 1, 10, px, py, WHITE),
+        TileKind::Grass => {
+            blit_cell(terrain, 5, 0, px, py, WHITE);
+            // Tall grass reads as scrub — the odd bush breaks up the field.
+            if h > 0.62 {
+                if let Some(b) = obj("bush") {
+                    blit_object(b, px, py, TILE * 0.7);
+                }
+            }
+        }
+        TileKind::Tree => {
+            blit_cell(terrain, 5, 0, px, py, WHITE);
+            let key = if h > 0.5 { "tree" } else { "tree2" };
+            if let Some(t) = obj(key) {
+                blit_object(t, px, py, TILE * 0.92);
+            } else {
+                draw_tile_procedural(kind, px, py, tx, ty, map_kind, mood);
+            }
+        }
+        TileKind::Rock => blit_cell(terrain, 13, 15, px, py, WHITE),
+        TileKind::SettlementDoor => {
+            blit_cell(terrain, 1, 10, px, py, WHITE);
+            if let Some(e) = obj("entrance") {
+                blit_object(e, px, py, TILE);
+            }
+        }
+        TileKind::GestariumDoor => {
+            blit_cell(terrain, 1, 10, px, py, WHITE);
+            if let Some(d) = assets.get_texture("door_metal") {
+                blit_object(d, px, py, TILE * 0.8);
+            }
+        }
+        // Water and the factory-only kinds keep their hand-drawn look.
+        _ => draw_tile_procedural(kind, px, py, tx, ty, map_kind, mood),
+    }
+}
 
 /// Region moods tint the land (`game_design.md` §9.2): purged ground grays
 /// out, reseeded ground blooms.
@@ -26,7 +147,7 @@ fn tinted(c: Color, t: (f32, f32, f32)) -> Color {
     )
 }
 
-pub(super) fn draw_tile(
+fn draw_tile_procedural(
     kind: TileKind,
     px: f32,
     py: f32,
