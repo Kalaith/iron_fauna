@@ -1,9 +1,12 @@
 //! World definitions: regions and connected overworld tile maps
 //! (`game_design.md` §8 — Pokémon-style connected 2D maps).
 //!
-//! Maps are authored as ASCII rows in `assets/data/world.json`:
+//! Maps are authored as ASCII rows in `assets/data/world.json` (and factory
+//! floors in `factories.json`):
 //! `#` tree/wall · `.` ground · `,` path · `g` tall grass (encounters) ·
-//! `~` water · `^` rocks · `s` settlement door · `D` gestarium door.
+//! `~` water · `^` rocks · `s` settlement door · `D` gestarium door ·
+//! `=` deck plate · `v` vat spill (factory encounters) · `V` gestation vat ·
+//! `H` the factory heart.
 
 use serde::{Deserialize, Serialize};
 
@@ -17,6 +20,10 @@ pub enum TileKind {
     Rock,
     SettlementDoor,
     GestariumDoor,
+    DeckPlate,
+    VatSpill,
+    Vat,
+    Heart,
 }
 
 impl TileKind {
@@ -30,13 +37,33 @@ impl TileKind {
             '^' => Some(TileKind::Rock),
             's' => Some(TileKind::SettlementDoor),
             'D' => Some(TileKind::GestariumDoor),
+            '=' => Some(TileKind::DeckPlate),
+            'v' => Some(TileKind::VatSpill),
+            'V' => Some(TileKind::Vat),
+            'H' => Some(TileKind::Heart),
             _ => None,
         }
     }
 
     pub fn walkable(self) -> bool {
-        !matches!(self, TileKind::Tree | TileKind::Water | TileKind::Rock)
+        !matches!(
+            self,
+            TileKind::Tree | TileKind::Water | TileKind::Rock | TileKind::Vat | TileKind::Heart
+        )
     }
+
+    /// Tiles that can trigger encounters when stepped on.
+    pub fn encounter_prone(self) -> bool {
+        matches!(self, TileKind::Grass | TileKind::VatSpill)
+    }
+}
+
+/// What kind of map this is — controls palette and encounter arming.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum MapKind {
+    #[default]
+    Overworld,
+    Factory,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,14 +101,55 @@ pub struct WarpDef {
     pub to_y: i32,
 }
 
+/// A condition gating a dialogue rule. Empty fields don't constrain.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct DialogueCond {
+    /// All of these story flags must be set.
+    #[serde(default)]
+    pub flags_all: Vec<String>,
+    /// None of these story flags may be set.
+    #[serde(default)]
+    pub flags_none: Vec<String>,
+    /// This factory's heart must be defeated.
+    #[serde(default)]
+    pub heart_defeated: Option<String>,
+    /// This factory must carry this verdict ("Purge"|"Reseed"|"Bind").
+    #[serde(default)]
+    pub verdict: Option<(String, String)>,
+    /// This factory must (true) / must not (false) be in relapse.
+    #[serde(default)]
+    pub relapsed: Option<(String, bool)>,
+}
+
+/// One conditional dialogue variant. The first rule whose condition passes
+/// plays; author fallbacks last.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DialogueRule {
+    #[serde(default)]
+    pub when: Option<DialogueCond>,
+    pub lines: Vec<String>,
+    /// Story flags set after the dialogue closes.
+    #[serde(default)]
+    pub set_flags: Vec<String>,
+    /// One-shot rewards granted when the dialogue closes.
+    #[serde(default)]
+    pub give_scrip: i64,
+    #[serde(default)]
+    pub give_grafts: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NpcDef {
     pub id: String,
     pub x: i32,
     pub y: i32,
     pub name: String,
-    /// Dialogue lines shown in order on interaction.
+    /// Simple unconditional lines (legacy shorthand for one fallback rule).
+    #[serde(default)]
     pub lines: Vec<String>,
+    /// Conditional dialogue, checked in order before falling back to `lines`.
+    #[serde(default)]
+    pub dialogue: Vec<DialogueRule>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -104,6 +172,11 @@ pub struct MapDef {
     /// Which settlement the `s` doors open (placeholder: outfit bench).
     #[serde(default)]
     pub settlement: Option<String>,
+    #[serde(default)]
+    pub kind: MapKind,
+    /// Set on factory floors: which Gestarium this floor belongs to.
+    #[serde(default)]
+    pub factory_id: Option<String>,
 }
 
 impl MapDef {
@@ -223,6 +296,57 @@ mod tests {
             }
             if map.encounter_rate > 0.0 {
                 assert!(!map.encounters.is_empty(), "{}: rate but no table", map.id);
+            }
+            for npc in &map.npcs {
+                assert!(
+                    !npc.lines.is_empty() || !npc.dialogue.is_empty(),
+                    "{}: NPC {} has nothing to say",
+                    map.id,
+                    npc.id
+                );
+                for rule in &npc.dialogue {
+                    assert!(!rule.lines.is_empty(), "{}: empty rule", npc.id);
+                    for def in &rule.give_grafts {
+                        assert!(
+                            data.graftware.contains(def),
+                            "{}: unknown reward graft {}",
+                            npc.id,
+                            def
+                        );
+                    }
+                    if let Some(cond) = &rule.when {
+                        if let Some((factory, verdict)) = &cond.verdict {
+                            assert!(
+                                data.factories.contains(factory),
+                                "{}: unknown factory {}",
+                                npc.id,
+                                factory
+                            );
+                            assert!(
+                                matches!(verdict.as_str(), "Purge" | "Reseed" | "Bind"),
+                                "{}: bad verdict name {}",
+                                npc.id,
+                                verdict
+                            );
+                        }
+                        if let Some(factory) = &cond.heart_defeated {
+                            assert!(
+                                data.factories.contains(factory),
+                                "{}: unknown factory {}",
+                                npc.id,
+                                factory
+                            );
+                        }
+                        if let Some((factory, _)) = &cond.relapsed {
+                            assert!(
+                                data.factories.contains(factory),
+                                "{}: unknown factory {}",
+                                npc.id,
+                                factory
+                            );
+                        }
+                    }
+                }
             }
         }
     }

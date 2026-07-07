@@ -49,6 +49,12 @@ pub struct GameSession {
     pub location: Location,
     /// Overworld steps taken — seeds encounter randomness deterministically.
     pub steps: u64,
+    /// The sum of the player's factory verdicts (`game_design.md` §9.2).
+    #[serde(default)]
+    pub world_state: crate::model::worldstate::WorldState,
+    /// Story progression flags set by dialogue and events.
+    #[serde(default)]
+    pub story_flags: std::collections::HashSet<String>,
 }
 
 impl GameSession {
@@ -84,6 +90,8 @@ impl GameSession {
                 y: start.spawn_y,
             },
             steps: 0,
+            world_state: Default::default(),
+            story_flags: Default::default(),
         }
     }
 }

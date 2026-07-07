@@ -1,0 +1,103 @@
+[
+  {
+    "id": "the_cradle",
+    "name": "The Cradle",
+    "region": "verdant_hollow",
+    "description": "The gentlest of the six, which is not the same as gentle. It grows meadow-cores in glass wombs and straps guns to them before they wake.",
+    "rider_upgrade": "SteadyHands",
+    "grows": ["bumblit", "volpi", "thistlin", "weavil", "quillow"],
+    "grow_cost": 150,
+    "floors": [
+      {
+        "id": "cradle_f1",
+        "name": "The Cradle — Gestation Hall",
+        "region": "verdant_hollow",
+        "spawn_x": 14,
+        "spawn_y": 13,
+        "encounter_rate": 0.22,
+        "encounters": [
+          { "species": "volpi", "weight": 3, "min": 1, "max": 2 },
+          { "species": "bumblit", "weight": 3 },
+          { "species": "weavil", "weight": 2 },
+          { "species": "pangol", "weight": 2 },
+          { "species": "quillow", "weight": 2 }
+        ],
+        "rows": [
+          "##############################",
+          "#============================#",
+          "#=VV==VV==VV=========VV==VV==#",
+          "#=VV==VV==VV===vvv===VV==VV==#",
+          "#==============vvv===========#",
+          "#=====vvvv===================#",
+          "#=====vvvv=========VV==VV====#",
+          "#==================VV==VV====#",
+          "#=========vvv================#",
+          "#=D=======vvv==========vvv===#",
+          "#======================vvv===#",
+          "#============================#",
+          "#============================#",
+          "#============================#",
+          "#============================#",
+          "##############DD##############"
+        ],
+        "warps": [
+          { "x": 14, "y": 15, "to_map": "old_growth", "to_x": 11, "to_y": 4 },
+          { "x": 15, "y": 15, "to_map": "old_growth", "to_x": 12, "to_y": 4 },
+          { "x": 2, "y": 9, "to_map": "cradle_f2", "to_x": 12, "to_y": 10 }
+        ]
+      },
+      {
+        "id": "cradle_f2",
+        "name": "The Cradle — Womb of the Heart",
+        "region": "verdant_hollow",
+        "spawn_x": 12,
+        "spawn_y": 10,
+        "encounter_rate": 0.16,
+        "encounters": [
+          { "species": "thistlin", "weight": 3 },
+          { "species": "weavil", "weight": 2 },
+          { "species": "pangol", "weight": 2 }
+        ],
+        "rows": [
+          "##########################",
+          "#========================#",
+          "#==VV==VV======VV==VV====#",
+          "#========================#",
+          "#=====vvv=======vvv======#",
+          "#=====vvv==HH===vvv======#",
+          "#========================#",
+          "#==vvv============vvv====#",
+          "#==vvv============vvv====#",
+          "#========================#",
+          "#========================#",
+          "#===========D============#",
+          "#========================#",
+          "##########################"
+        ],
+        "warps": [{ "x": 12, "y": 11, "to_map": "cradle_f1", "to_x": 3, "to_y": 9 }]
+      }
+    ],
+    "heart_guard": [
+      {
+        "species": "ferrobruin",
+        "name": "Cradle-Warden",
+        "grafts": [
+          { "limb": "back", "slot": 0, "graft": "bolt_cannon" },
+          { "limb": "arm_l", "slot": 0, "graft": "ember_spitter" },
+          { "limb": "arm_r", "slot": 0, "graft": "basalt_carapace" },
+          { "limb": "haunch_l", "slot": 0, "graft": "shield_membrane" }
+        ]
+      },
+      {
+        "species": "volpi",
+        "name": "Womb-Watch Alpha",
+        "grafts": [{ "limb": "foreleg_l", "slot": 0, "graft": "spark_coil" }]
+      },
+      {
+        "species": "volpi",
+        "name": "Womb-Watch Beta",
+        "grafts": [{ "limb": "foreleg_r", "slot": 0, "graft": "static_barb" }]
+      }
+    ]
+  }
+]

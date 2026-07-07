@@ -1,0 +1,561 @@
+{
+  "maps": [
+    {
+      "id": "ash_approach",
+      "name": "Ashvein Approach",
+      "region": "ashvein",
+      "spawn_x": 3,
+      "spawn_y": 8,
+      "encounter_rate": 0.12,
+      "encounters": [
+        { "species": "salamber", "weight": 5, "min": 1, "max": 2 },
+        { "species": "cindrift", "weight": 4, "min": 1, "max": 2 },
+        { "species": "scorpip", "weight": 2 }
+      ],
+      "rows": [
+        "##################################",
+        "##..............................##",
+        "##..^^^....ggggg......ggggg...^^##",
+        "##..^^^....ggggg......ggggg.....##",
+        "##.........ggggg......ggggg...^^##",
+        "##..............................##",
+        "##......ggg............ggg......##",
+        "##..............................##",
+        "..................................",
+        "..................................",
+        "##..ggggg..........ggggg......^^##",
+        "##..ggggg..........ggggg........##",
+        "##..ggggg..........ggggg....^^^.##",
+        "##..............................##",
+        "##...^^^....^^^^^.......^^^^....##",
+        "##################################"
+      ],
+      "warps": [
+        { "x": 0, "y": 8, "to_map": "crossroads", "to_x": 40, "to_y": 8 },
+        { "x": 0, "y": 9, "to_map": "crossroads", "to_x": 40, "to_y": 9 },
+        { "x": 33, "y": 8, "to_map": "glasshearth_terraces", "to_x": 1, "to_y": 8 },
+        { "x": 33, "y": 9, "to_map": "glasshearth_terraces", "to_x": 1, "to_y": 9 }
+      ],
+      "npcs": [
+        {
+          "id": "cinder_farmer_osk",
+          "x": 20,
+          "y": 13,
+          "name": "Osk the Cinder-Farmer",
+          "dialogue": [
+            {
+              "when": { "relapsed": ["the_kiln", true] },
+              "lines": [
+                "The fall came down greasy last night. That's not the mountain — that's the Kiln, breathing again.",
+                "Whatever you settled down there, somebody unsettled it. My fields can wait. Go."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_kiln", "Purge"] },
+              "lines": [
+                "No fall since you silenced it. Clean sky, first time in my life.",
+                "Turns out the barley wanted the ash more than I did. Quiet's a kind of famine, rider. Nobody warns you about that."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_kiln", "Reseed"] },
+              "lines": [
+                "The fall comes down soft now, and warm, and the barley's never stood taller.",
+                "I keep waiting for the catch. My grandmother said the mountain never gives — it lends."
+              ]
+            },
+            {
+              "lines": [
+                "You farm ash by trusting it. Three falls a season, soft as snow, and the barley comes up black-stemmed and sweet.",
+                "The mountain isn't angry. It's just not finished. Neither am I, so we get along.",
+                "East along the road is Glasshearth. Mind the drifts — things sleep shallow under fresh fall."
+              ],
+              "set_flags": ["ashvein_met_osk"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "glasshearth_terraces",
+      "name": "Glasshearth",
+      "region": "ashvein",
+      "settlement": "glasshearth",
+      "spawn_x": 16,
+      "spawn_y": 6,
+      "rows": [
+        "################################",
+        "##....^^....................^^##",
+        "##...####....####..........^^^##",
+        "##...####....####.............##",
+        "##....s.......s...............##",
+        "##..,,,,,,,,,,,,,,,,,,,,,,,...##",
+        "##..,.....................,...##",
+        "##..,.....................,...##",
+        "....,.....................,....",
+        "....,.....................,....",
+        "##..,,,,,,,,,,,,,,,,,,,,,,,...##",
+        "##.....^^..........^^.........##",
+        "##............................##",
+        "################################"
+      ],
+      "warps": [
+        { "x": 0, "y": 8, "to_map": "ash_approach", "to_x": 32, "to_y": 8 },
+        { "x": 0, "y": 9, "to_map": "ash_approach", "to_x": 32, "to_y": 9 },
+        { "x": 31, "y": 8, "to_map": "kiln_rim", "to_x": 1, "to_y": 8 },
+        { "x": 31, "y": 9, "to_map": "kiln_rim", "to_x": 1, "to_y": 9 }
+      ],
+      "npcs": [
+        {
+          "id": "glassmaster_ferren",
+          "x": 22,
+          "y": 6,
+          "name": "Glassmaster Ferren",
+          "dialogue": [
+            {
+              "when": { "relapsed": ["the_kiln", true] },
+              "lines": [
+                "My furnaces guttered last night — the draft's wrong all down the ridge. The Kiln is pulling air again.",
+                "You quieted it once. Whatever crawled in after you means to finish what the Progenitors started. Please."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_kiln", "Purge"] },
+              "lines": [
+                "The Kiln's cold. The ridge is cooling with it — my furnaces run half-heat on wood and scavenge now.",
+                "The trade will die in a generation. But no more war-stock walks out of that door, and my apprentices will die old. I've run the arithmetic. I sign it."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_kiln", "Reseed"] },
+              "lines": [
+                "The vents run gentle now — kiln-heat without the killing. My glass has never come out so clear.",
+                "A whole valley warming its hands on a thing that was built to burn us. I laugh about it most days. Most days it isn't a nervous laugh."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_kiln", "Bind"] },
+              "lines": [
+                "They say the Kiln answers you now. That you grow your own stock in the vats we used to run from.",
+                "Bring your beasts by the shop, rider. I'll blow glass eyes for the ones that lose theirs. Seems right that somebody up here still makes things that can't hurt anyone."
+              ]
+            },
+            {
+              "lines": [
+                "Caldera sand makes glass with fire already inside it. Every piece I blow holds a little of the mountain's temper.",
+                "The Kiln taught us the trade, generations back, before it went to war-work. We kept the craft. It kept the fire."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "pyra_kid",
+          "x": 10,
+          "y": 12,
+          "name": "Pyra",
+          "dialogue": [
+            {
+              "when": { "verdict": ["the_kiln", "Purge"] },
+              "lines": [
+                "The ground stopped grumbling. Everyone says that's good.",
+                "I can't sleep without it. Don't tell Papa I said the mountain's name into the vent, just in case it's listening."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_kiln", "Bind"] },
+              "lines": [
+                "Is it true you can grow a salamber down there? A real one, just for you?",
+                "If you grow one that's small and doesn't bite — I mean. If you ever need somebody to watch one. I'm just saying I'm available."
+              ]
+            },
+            {
+              "lines": [
+                "I sleep with a glass marble Master Ferren blew me. There's a little smoke curl trapped inside — see?",
+                "Papa says the mountain grumbles because it's lonely. I grumble back so it isn't."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kiln_rim",
+      "name": "The Caldera Rim",
+      "region": "ashvein",
+      "spawn_x": 17,
+      "spawn_y": 13,
+      "encounter_rate": 0.14,
+      "encounters": [
+        { "species": "kilnox", "weight": 4 },
+        { "species": "scorpip", "weight": 3, "min": 1, "max": 2 },
+        { "species": "salamber", "weight": 3, "min": 1, "max": 2 },
+        { "species": "cindrift", "weight": 2 },
+        { "species": "rhyoli", "weight": 1, "min": 1, "max": 1 }
+      ],
+      "rows": [
+        "####################################",
+        "##..^^^^....................^^^^..##",
+        "##..............####..............##",
+        "##..............#DD#..............##",
+        "##...............,,...............##",
+        "##...............,,...............##",
+        "##...............,,...............##",
+        "##..gggggg.......,,......gggg.....##",
+        ".....gggggg......,,...............##",
+        ".....gggggg......,,...............##",
+        "##...............,,....gggggg.....##",
+        "##......^^.......,,....gggggg.....##",
+        "##...............,,...............##",
+        "##................................##",
+        "##..^^^^........^^^^........^^^^..##",
+        "####################################"
+      ],
+      "warps": [
+        { "x": 0, "y": 8, "to_map": "glasshearth_terraces", "to_x": 30, "to_y": 8 },
+        { "x": 0, "y": 9, "to_map": "glasshearth_terraces", "to_x": 30, "to_y": 9 },
+        { "x": 17, "y": 3, "to_map": "kiln_f1", "to_x": 13, "to_y": 12 },
+        { "x": 18, "y": 3, "to_map": "kiln_f1", "to_x": 14, "to_y": 12 }
+      ],
+      "npcs": [
+        {
+          "id": "rim_warden_brami",
+          "x": 12,
+          "y": 13,
+          "name": "Rim-Warden Brami",
+          "dialogue": [
+            {
+              "when": { "relapsed": ["the_kiln", true] },
+              "lines": [
+                "The doors are open and the tally's started again. Three in since the smoke turned. None out.",
+                "You knew the way once. I'll hold your name off the list until you're back."
+              ]
+            },
+            {
+              "when": { "heart_defeated": "the_kiln" },
+              "lines": [
+                "First watch in thirty years I've counted stars instead of tremors.",
+                "I don't know what to do with my hands now. I'll learn. That's the whole job — learning what the quiet asks of you."
+              ]
+            },
+            {
+              "lines": [
+                "Past those doors is the Kiln. It grew things that swim in lava and don't notice arrows. I keep the tally of who goes in.",
+                "The tally of who comes out is a shorter list. Shout your name on the way past so I spell it right."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "vess_ashwalker",
+          "x": 26,
+          "y": 13,
+          "name": "Vess the Ashwalker",
+          "dialogue": [
+            {
+              "when": { "flags_none": ["ashvein_gift"] },
+              "lines": [
+                "Found a war-unit dead in the drifts last month — old one, Kiln-pattern, quill rack still warm. Took me a week to cut it free.",
+                "I don't run a chassis big enough to bear it, and scrap-men ask questions. You look like the answer. Take it."
+              ],
+              "set_flags": ["ashvein_gift"],
+              "give_grafts": ["quill_volley"]
+            },
+            {
+              "lines": [
+                "I walk the ashfields after each fall and take what the mountain buries. It's not grave-robbing if the grave is everywhere.",
+                "Careful in the drifts. Things sleep shallow out here."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settlements": [
+    {
+      "id": "glasshearth",
+      "name": "Glasshearth",
+      "region": "ashvein",
+      "description": "Heat-shielded terraces cut into the caldera's cold shoulder. They farm the ashfall and blow the sand to glass, and every roof is angled to shrug off the next eruption — whenever the mountain makes up its mind.",
+      "shop": [
+        { "graft": "slag_maw" },
+        { "graft": "cindershell" },
+        { "graft": "shale_sling" },
+        { "graft": "marrow_battery" },
+        { "graft": "keen_lens" },
+        { "graft": "surge_heart" },
+        { "graft": "quill_volley" },
+        { "graft": "magma_gullet", "price": 750 }
+      ],
+      "duelists": [
+        {
+          "id": "sella",
+          "name": "Sella of the Bellows",
+          "blurb": "Ferren's apprentice, duelling on her lunch hour so the burn scars feel earned. Her salamber naps in the annealing oven.",
+          "rank_req": 0,
+          "practice": true,
+          "reward_scrip": 35,
+          "party": [
+            {
+              "species": "salamber",
+              "name": "Sella's Wick",
+              "grafts": [{ "limb": "foreleg_l", "slot": 0, "graft": "cinder_flick" }]
+            }
+          ]
+        },
+        {
+          "id": "farrow",
+          "name": "Farrow the Tiller",
+          "blurb": "A cinder-farmer who fights the way he tills — patient, methodical, and always downwind.",
+          "rank_req": 1,
+          "practice": true,
+          "reward_scrip": 60,
+          "party": [
+            {
+              "species": "scorpip",
+              "name": "Farrow's Harrow",
+              "grafts": [
+                { "limb": "claw_l", "slot": 0, "graft": "ember_spitter" },
+                { "limb": "legs_fore_l", "slot": 0, "graft": "spit_gland" }
+              ]
+            },
+            {
+              "species": "cindrift",
+              "name": "Farrow's Smoke",
+              "grafts": [{ "limb": "harness", "slot": 0, "graft": "keen_lens" }]
+            }
+          ]
+        },
+        {
+          "id": "brakka",
+          "name": "Brakka Sand-Hauler",
+          "blurb": "She carts caldera sand up the rim road every morning. Her ox has carried worse than a cannon and complained less than she does.",
+          "rank_req": 1,
+          "practice": false,
+          "reward_scrip": 90,
+          "stake": "quill_volley",
+          "min_stake_value": 180,
+          "party": [
+            {
+              "species": "kilnox",
+              "name": "Brakka's Anvil",
+              "grafts": [
+                { "limb": "kiln_back", "slot": 0, "graft": "bolt_cannon" },
+                { "limb": "horn_boss", "slot": 0, "graft": "quill_volley" },
+                { "limb": "foreleg_l", "slot": 0, "graft": "cindershell" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "maren",
+          "name": "Maren Vent-Tapper",
+          "blurb": "She wagers salvage pulled from steam tunnels nobody sane taps. Smells like sulfur; wins like it too.",
+          "rank_req": 2,
+          "practice": false,
+          "reward_scrip": 140,
+          "stake": "surge_heart",
+          "min_stake_value": 300,
+          "party": [
+            {
+              "species": "scorpip",
+              "name": "Maren's Scuttle",
+              "grafts": [
+                { "limb": "claw_l", "slot": 0, "graft": "slag_maw" },
+                { "limb": "claw_r", "slot": 0, "graft": "cindershell" },
+                { "limb": "stinger", "slot": 0, "graft": "venom_needler" },
+                { "limb": "legs_hind_l", "slot": 0, "graft": "sap_tap" }
+              ]
+            },
+            {
+              "species": "salamber",
+              "name": "Maren's Match",
+              "grafts": [
+                { "limb": "foreleg_l", "slot": 0, "graft": "cinder_flick" },
+                { "limb": "foreleg_r", "slot": 0, "graft": "gnasher_jaw" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "hult",
+          "name": "Hult of the Last Crew",
+          "blurb": "Rode with the last company that tried the Kiln's doors. He doesn't talk about it; his rhino remembers enough for both of them.",
+          "rank_req": 3,
+          "practice": false,
+          "reward_scrip": 200,
+          "stake": "magma_gullet",
+          "min_stake_value": 450,
+          "party": [
+            {
+              "species": "rhyoli",
+              "name": "Hult's Caldera",
+              "grafts": [
+                { "limb": "horn", "slot": 0, "graft": "magma_gullet" },
+                { "limb": "stone_back", "slot": 0, "graft": "gel_bastion" },
+                { "limb": "foreleg_l", "slot": 0, "graft": "slag_maw" },
+                { "limb": "foreleg_r", "slot": 0, "graft": "cindershell" }
+              ]
+            },
+            {
+              "species": "kilnox",
+              "name": "Hult's Bellows",
+              "grafts": [
+                { "limb": "kiln_back", "slot": 0, "graft": "magma_gullet" },
+                { "limb": "horn_boss", "slot": 0, "graft": "shale_sling" },
+                { "limb": "haunches", "slot": 0, "graft": "drip_sac" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "factories": [
+    {
+      "id": "the_kiln",
+      "name": "The Kiln",
+      "region": "ashvein",
+      "description": "The Kiln bred war-stock for lava crossings — furnace-hearted, slag-plated, patient as stone. Silenced or not, the ridge still warms its hands on the heat that leaks from its doors.",
+      "rider_upgrade": "Ironheart",
+      "grows": ["salamber", "cindrift", "kilnox", "scorpip", "rhyoli"],
+      "grow_cost": 500,
+      "floors": [
+        {
+          "id": "kiln_f1",
+          "name": "The Kiln — Charging Hall",
+          "region": "ashvein",
+          "spawn_x": 13,
+          "spawn_y": 12,
+          "encounter_rate": 0.2,
+          "encounters": [
+            { "species": "salamber", "weight": 4, "min": 1, "max": 2 },
+            { "species": "cindrift", "weight": 3 },
+            { "species": "scorpip", "weight": 3, "min": 1, "max": 2 }
+          ],
+          "rows": [
+            "##############################",
+            "#============================#",
+            "#=VV==VV====vvv====VV==VV====#",
+            "#=VV==VV====vvv====VV==VV====#",
+            "#============================#",
+            "#===vvvv============vvvv=====#",
+            "#===vvvv============vvvv=====#",
+            "#============================#",
+            "#=D==========vvv=============#",
+            "#============vvv=============#",
+            "#=VV==VV=============VV==VV==#",
+            "#============================#",
+            "#============================#",
+            "#############DD###############"
+          ],
+          "warps": [
+            { "x": 13, "y": 13, "to_map": "kiln_rim", "to_x": 17, "to_y": 4 },
+            { "x": 14, "y": 13, "to_map": "kiln_rim", "to_x": 18, "to_y": 4 },
+            { "x": 2, "y": 8, "to_map": "kiln_f2", "to_x": 14, "to_y": 10 }
+          ]
+        },
+        {
+          "id": "kiln_f2",
+          "name": "The Kiln — Slag Galleries",
+          "region": "ashvein",
+          "spawn_x": 14,
+          "spawn_y": 10,
+          "encounter_rate": 0.18,
+          "encounters": [
+            { "species": "scorpip", "weight": 4, "min": 1, "max": 2 },
+            { "species": "kilnox", "weight": 3 },
+            { "species": "salamber", "weight": 2, "min": 1, "max": 2 }
+          ],
+          "rows": [
+            "############################",
+            "#==========================#",
+            "#==VV==VV========VV==VV====#",
+            "#==========================#",
+            "#====vvvv========vvvv======#",
+            "#====vvvv========vvvv======#",
+            "#==========================#",
+            "#=D=========vvvv===========#",
+            "#===========vvvv===========#",
+            "#==========================#",
+            "#=====VV========VV=========#",
+            "#=============D============#",
+            "############################"
+          ],
+          "warps": [
+            { "x": 14, "y": 11, "to_map": "kiln_f1", "to_x": 3, "to_y": 8 },
+            { "x": 2, "y": 7, "to_map": "kiln_f3", "to_x": 12, "to_y": 9 }
+          ]
+        },
+        {
+          "id": "kiln_f3",
+          "name": "The Kiln — Heart Forge",
+          "region": "ashvein",
+          "spawn_x": 12,
+          "spawn_y": 9,
+          "encounter_rate": 0.16,
+          "encounters": [
+            { "species": "kilnox", "weight": 4 },
+            { "species": "scorpip", "weight": 3, "min": 1, "max": 2 },
+            { "species": "rhyoli", "weight": 1, "min": 1, "max": 1 }
+          ],
+          "rows": [
+            "##########################",
+            "#========================#",
+            "#==VV========VV==========#",
+            "#========================#",
+            "#====vvv====HH====vvv====#",
+            "#====vvv==========vvv====#",
+            "#========================#",
+            "#==vvv============vvv====#",
+            "#==vvv============vvv====#",
+            "#========================#",
+            "#===========D============#",
+            "##########################"
+          ],
+          "warps": [{ "x": 12, "y": 10, "to_map": "kiln_f2", "to_x": 3, "to_y": 7 }]
+        }
+      ],
+      "heart_guard": [
+        {
+          "species": "rhyoli",
+          "name": "Kiln-Warden",
+          "grafts": [
+            { "limb": "horn", "slot": 0, "graft": "magma_gullet" },
+            { "limb": "stone_back", "slot": 0, "graft": "magnetite_hide" },
+            { "limb": "foreleg_l", "slot": 0, "graft": "slag_maw" },
+            { "limb": "foreleg_r", "slot": 0, "graft": "cindershell" }
+          ]
+        },
+        {
+          "species": "kilnox",
+          "name": "Forge-Ox of the Third Vat",
+          "grafts": [
+            { "limb": "kiln_back", "slot": 0, "graft": "bolt_cannon" },
+            { "limb": "horn_boss", "slot": 0, "graft": "shale_sling" },
+            { "limb": "foreleg_l", "slot": 0, "graft": "ember_spitter" },
+            { "limb": "haunches", "slot": 0, "graft": "surge_heart" }
+          ]
+        },
+        {
+          "species": "scorpip",
+          "name": "Slag-Tender",
+          "grafts": [
+            { "limb": "claw_l", "slot": 0, "graft": "venom_needler" },
+            { "limb": "claw_r", "slot": 0, "graft": "cindershell" },
+            { "limb": "stinger", "slot": 0, "graft": "quill_volley" },
+            { "limb": "legs_fore_l", "slot": 0, "graft": "cinder_flick" }
+          ]
+        },
+        {
+          "species": "salamber",
+          "name": "Ash-Mote",
+          "grafts": [
+            { "limb": "foreleg_l", "slot": 0, "graft": "cinder_flick" },
+            { "limb": "foreleg_r", "slot": 0, "graft": "chitin_plate" }
+          ]
+        }
+      ]
+    }
+  ]
+}

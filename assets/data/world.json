@@ -85,10 +85,52 @@
           "x": 24,
           "y": 7,
           "name": "Warden Isa",
-          "lines": [
-            "Fernhollow holds because somebody rides out every morning and thins what the Cradle births.",
-            "Lately that somebody is you. No family waiting on you — makes you brave. Or spendable. Same thing here.",
-            "The bench in town will graft anything you can carry home. Mind the strain. The little ones break quiet."
+          "dialogue": [
+            {
+              "when": { "relapsed": ["the_cradle", true] },
+              "lines": [
+                "You hear it too, don't you. Engines in the green you gave us back.",
+                "Someone found the Cradle warm and decided the old way was owed another try. Go to the heart. End what you started — or finish it properly this time."
+              ]
+            },
+            {
+              "when": { "heart_defeated": "the_cradle", "flags_none": ["isa_reward"] },
+              "lines": [
+                "The birthing halls are quiet. First morning in forty years nobody rode out at dawn.",
+                "Whatever you chose down there — the Hollow owes you. This is everything the watch could spare."
+              ],
+              "set_flags": ["isa_reward"],
+              "give_scrip": 150
+            },
+            {
+              "when": { "verdict": ["the_cradle", "Purge"] },
+              "lines": [
+                "Safe. That's the word everyone keeps using. The meadow's gone gray at the edges, you noticed?",
+                "Graveyard peace is still peace. I'll take it. I'll spend the rest of my life telling myself I'd take it again."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_cradle", "Reseed"] },
+              "lines": [
+                "Green's coming back like the land was only holding its breath. Children swim in the mere now.",
+                "And every trader that passes through looks at that warm, working factory a little too long. Fund the watch, rider. Prosperity forgets fastest."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_cradle", "Bind"] },
+              "lines": [
+                "They say you grow your own now, down in the wombs. That the vats answer to your hand.",
+                "The Progenitors probably had a first one too. Someone decent, who only meant to protect everyone. Don't make me right about you."
+              ]
+            },
+            {
+              "lines": [
+                "Fernhollow holds because somebody rides out every morning and thins what the Cradle births.",
+                "Lately that somebody is you. No family waiting on you — makes you brave. Or spendable. Same thing here.",
+                "The bench in town will graft anything you can carry home. Mind the strain. The little ones break quiet."
+              ],
+              "set_flags": ["met_isa"]
+            }
           ]
         },
         {
@@ -96,9 +138,27 @@
           "x": 10,
           "y": 8,
           "name": "Tally",
-          "lines": [
-            "I saw a Volpi once! It let me touch its nose!",
-            "Mama says when I'm big I get grafted a gun-arm like everyone. I don't want one. Don't tell."
+          "dialogue": [
+            {
+              "when": { "verdict": ["the_cradle", "Purge"] },
+              "lines": [
+                "The meadow went quiet. Mama says quiet is good.",
+                "I haven't seen a Volpi in ages. Did the quiet take them too?"
+              ]
+            },
+            {
+              "when": { "verdict": ["the_cradle", "Reseed"] },
+              "lines": [
+                "There are flowers on the old road! Actual flowers! I counted forty!",
+                "Mama says I might not need a gun-arm after all. Don't tell her I cried."
+              ]
+            },
+            {
+              "lines": [
+                "I saw a Volpi once! It let me touch its nose!",
+                "Mama says when I'm big I get grafted a gun-arm like everyone. I don't want one. Don't tell."
+              ]
+            }
           ]
         }
       ]
@@ -128,7 +188,7 @@
         "##...,.....................,......##",
         "##...,.....ggggggggg.......,......##",
         "##...,.....ggggggggg.......,......##",
-        ".....,.....ggggggggg.......,......##",
+        ".....,.....ggggggggg.......,........",
         "##...,.....................,......##",
         "##...,,,,,,,,,,,,,,,,,,,,,,,......##",
         "##................................##",
@@ -139,16 +199,96 @@
         "##................................##",
         "####################################"
       ],
-      "warps": [{ "x": 0, "y": 10, "to_map": "haven_row", "to_x": 30, "to_y": 10 }],
+      "warps": [
+        { "x": 0, "y": 10, "to_map": "haven_row", "to_x": 30, "to_y": 10 },
+        { "x": 35, "y": 10, "to_map": "crossroads", "to_x": 1, "to_y": 10 }
+      ],
       "npcs": [
         {
           "id": "scout_perrin",
           "x": 20,
           "y": 13,
           "name": "Scout Perrin",
+          "dialogue": [
+            {
+              "when": { "relapsed": ["the_cradle", true] },
+              "lines": [
+                "Get off the grass. I mean it. The things moving through it now are armed, and they aren't factory-born — someone MADE them.",
+                "We revived this place. Us. Which means whoever's grafting out there learned it was possible from watching us."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_cradle", "Reseed"] },
+              "lines": [
+                "Grass is thicker than my whole life I've seen it. New burrows every morning.",
+                "Almost makes you forget what the ground under it can build. Almost."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_cradle", "Purge"] },
+              "lines": [
+                "Scouting's easy now. Nothing moves. You can hear your own heart out here.",
+                "I used to complain about the noise. Turns out the noise was the world."
+              ]
+            },
+            {
+              "lines": [
+                "Grass moves wrong out here sometimes. That's how you tell the wild ones from the factory-born.",
+                "Wild ones just want to be left alone. Subdue them gentle — crack the shell, never the thing inside."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "crossroads",
+      "name": "The Old Road",
+      "region": "verdant_hollow",
+      "spawn_x": 20,
+      "spawn_y": 12,
+      "encounter_rate": 0.06,
+      "encounters": [
+        { "species": "volpi", "weight": 3 },
+        { "species": "quillow", "weight": 3 },
+        { "species": "kestrelle", "weight": 2 }
+      ],
+      "rows": [
+        "########..##############..################",
+        "#........................................#",
+        "#........................................#",
+        "#........................................#",
+        "#....ggg.............................ggg.#",
+        "#........................................#",
+        "#........................................#",
+        "#........................................#",
+        "#.........................................",
+        "#.........................................",
+        "..........................................",
+        "#........................................#",
+        "#........................................#",
+        "#........................................#",
+        "#........................................#",
+        "#........................................#",
+        "#....ggg.............................ggg.#",
+        "#........................................#",
+        "#........................................#",
+        "#........................................#",
+        "#........................................#",
+        "############..################..##########"
+      ],
+      "warps": [{ "x": 0, "y": 10, "to_map": "verdant_meadow", "to_x": 34, "to_y": 10 }],
+      "npcs": [
+        {
+          "id": "tollkeeper_vex",
+          "x": 20,
+          "y": 11,
+          "name": "Toll-Keeper Vex",
           "lines": [
-            "Grass moves wrong out here sometimes. That's how you tell the wild ones from the factory-born.",
-            "Wild ones just want to be left alone. Subdue them gentle — crack the shell, never the thing inside."
+            "No toll. Haven't collected one in thirty years. I just like knowing who's still moving.",
+            "North-west takes you to Mirrormere's lakes. North-east climbs to Stormcap. Dead east is Ashvein, if the ground will have you.",
+            "South roads? Sporefen to the east of them, and the Bonewhite Flats west. Nobody comes back from the Flats complaining, because nobody comes back talkative.",
+            "Six factories, six roads, one of you. Somebody did the arithmetic wrong, and it wasn't me."
           ]
         }
       ]
@@ -172,7 +312,7 @@
         "##....................##########",
         "##..ggg...####...ggg..##########",
         "##..ggg...#DD#...ggg..##########",
-        "##..ggg...####........##########",
+        "##..ggg...#,,#........##########",
         "##.........,,.........##########",
         "##..,,,,,,,,,,,,,,,...##########",
         "##..,..ggggg......,...##########",
@@ -187,7 +327,9 @@
       ],
       "warps": [
         { "x": 16, "y": 15, "to_map": "haven_row", "to_x": 16, "to_y": 2 },
-        { "x": 17, "y": 15, "to_map": "haven_row", "to_x": 17, "to_y": 2 }
+        { "x": 17, "y": 15, "to_map": "haven_row", "to_x": 17, "to_y": 2 },
+        { "x": 11, "y": 3, "to_map": "cradle_f1", "to_x": 14, "to_y": 13 },
+        { "x": 12, "y": 3, "to_map": "cradle_f1", "to_x": 14, "to_y": 13 }
       ],
       "npcs": [
         {
@@ -195,10 +337,37 @@
           "x": 8,
           "y": 13,
           "name": "Grafter Moel",
-          "lines": [
-            "That's the Cradle behind me. Doors sealed since before my mother's mother. Pray they stay that way.",
-            "Everything it births comes out already armed. Imagine being born with the gun grown on.",
-            "When the doors open — and they will — you'll want more than two light mounts. Come find me first."
+          "dialogue": [
+            {
+              "when": { "flags_none": ["moel_gift"], "flags_all": ["met_isa"] },
+              "lines": [
+                "Isa sent you sniffing at the Cradle, didn't she. Of course she did. Orphans are cheap.",
+                "Listen. I pulled this spitter off a war-unit that nearly took my leg. If you're going in those doors, it should go with you. Better on your beast than in my shed."
+              ],
+              "set_flags": ["moel_gift"],
+              "give_grafts": ["ember_spitter"]
+            },
+            {
+              "when": { "verdict": ["the_cradle", "Bind"] },
+              "lines": [
+                "So the wombs turn for you now. Good. Or terrible. My trade doesn't get to be picky about which.",
+                "Whatever you grow down there — name them. Things with names are harder to spend."
+              ]
+            },
+            {
+              "when": { "heart_defeated": "the_cradle" },
+              "lines": [
+                "You actually walked out of there. Front doors, even.",
+                "The forest sounds different with the heart quiet. Not better. Not worse. Different. I keep listening for it anyway."
+              ]
+            },
+            {
+              "lines": [
+                "That's the Cradle behind me. Doors sealed since before my mother's mother. Pray they stay that way.",
+                "Everything it births comes out already armed. Imagine being born with the gun grown on.",
+                "When the doors open — and they will — you'll want more than two light mounts. Come find me first."
+              ]
+            }
           ]
         }
       ]

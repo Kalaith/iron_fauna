@@ -164,6 +164,17 @@ pub struct BattleTuning {
     pub graft_hp: WeightScaled,
 }
 
+/// World-layer pacing: relapse pressure and stewardship (`game_design.md` §9.1).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorldTuning {
+    /// Relapse risk gained per overworld step in an untended reseeded region.
+    pub relapse_per_step: f32,
+    /// Risk-growth multiplier once the watch is funded.
+    pub relapse_invested_mult: f32,
+    /// Scrip cost to fund a region's watch.
+    pub watch_cost: i64,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BalanceConfig {
     /// Field/party budget in slots (`combat.md` §2.1).
@@ -172,6 +183,7 @@ pub struct BalanceConfig {
     pub vigor: VigorTuning,
     pub strain: StrainTuning,
     pub battle: BattleTuning,
+    pub world: WorldTuning,
 }
 
 #[cfg(test)]

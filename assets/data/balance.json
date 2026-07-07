@@ -61,5 +61,10 @@
     "natural_attack_cooldown": 2.2,
     "element_synergy_mult": 1.25,
     "graft_hp": { "light": 25.0, "medium": 45.0, "heavy": 70.0 }
+  },
+  "world": {
+    "relapse_per_step": 0.00035,
+    "relapse_invested_mult": 0.15,
+    "watch_cost": 400
   }
 }

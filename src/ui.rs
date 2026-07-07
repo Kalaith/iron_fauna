@@ -4,6 +4,7 @@ pub mod battle;
 pub mod outfit;
 pub mod overworld;
 pub mod settlement;
+pub mod verdict;
 
 use crate::data::species::Element;
 use crate::data::GameData;

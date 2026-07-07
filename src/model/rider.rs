@@ -75,6 +75,15 @@ impl Rider {
         self.upgrades.contains(&upgrade)
     }
 
+    /// Grants an upgrade; returns false if already earned.
+    pub fn grant(&mut self, upgrade: RiderUpgrade) -> bool {
+        if self.has(upgrade) {
+            return false;
+        }
+        self.upgrades.push(upgrade);
+        true
+    }
+
     pub fn called_shot_accuracy_mult(&self) -> f32 {
         if self.has(RiderUpgrade::SteadyHands) {
             1.10

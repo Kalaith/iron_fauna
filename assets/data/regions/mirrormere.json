@@ -1,0 +1,554 @@
+{
+  "maps": [
+    {
+      "id": "mere_shallows",
+      "name": "The Mere Shallows",
+      "region": "mirrormere",
+      "spawn_x": 16,
+      "spawn_y": 2,
+      "encounter_rate": 0.13,
+      "encounters": [
+        { "species": "lutrin", "weight": 4, "min": 1, "max": 2 },
+        { "species": "puffkin", "weight": 3, "min": 1, "max": 2 },
+        { "species": "lumigrub", "weight": 3, "min": 1, "max": 2 },
+        { "species": "kestrelle", "weight": 2 },
+        { "species": "axolet", "weight": 2 },
+        { "species": "pinchit", "weight": 1 }
+      ],
+      "rows": [
+        "################..################",
+        "##..............................##",
+        "##....ggg.......................##",
+        "##....ggg....~~~~~~....ggg......##",
+        "##....ggg....~~~~~~....ggg......##",
+        "##...........~~~~~~.............##",
+        "##..,,,,,,,,,,,,,,,,,,,,,,,,,...##",
+        "##..,.......................,...##",
+        "##..,...gggg....~~~....ggg..,...##",
+        "....,...gggg....~~~....ggg..,...##",
+        "##..,.......................,....",
+        "##..,,,,,,,,,,,,,,,,,,,,,,,,,...##",
+        "##..............................##",
+        "##...ggg....^^....gggg......^...##",
+        "##...ggg..........gggg..........##",
+        "##....~~~~~~~..........~~~~~....##",
+        "##..............................##",
+        "##################################"
+      ],
+      "warps": [
+        { "x": 16, "y": 0, "to_map": "crossroads", "to_x": 8, "to_y": 1 },
+        { "x": 17, "y": 0, "to_map": "crossroads", "to_x": 9, "to_y": 1 },
+        { "x": 0, "y": 9, "to_map": "saltwick_strand", "to_x": 28, "to_y": 9 },
+        { "x": 33, "y": 10, "to_map": "drowned_causeway", "to_x": 1, "to_y": 8 }
+      ],
+      "npcs": [
+        {
+          "id": "ferrywoman_brack",
+          "x": 20,
+          "y": 7,
+          "name": "Ferrywoman Brack",
+          "dialogue": [
+            {
+              "when": { "relapsed": ["the_font", true] },
+              "lines": [
+                "Punt won't go out today. There's light under the water again — Font-light, moving with a purpose.",
+                "Somebody woke what you put to sleep. Get down the causeway before it remembers how many of us live on its shore."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_font", "Purge"] },
+              "lines": [
+                "Water's never been this clear. You can see all the way down now — the vats, the old town, the bones of both.",
+                "Nothing swims across my bow anymore. I used to curse the splashing. Turns out the splashing was the mere being alive."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_font", "Reseed"] },
+              "lines": [
+                "Shoals came back to the shallows this spring. Real ones, wild ones, no seams in them anywhere.",
+                "First time in my life the wake behind the punt has company. I sing to it. Don't you dare tell the anglers."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_font", "Bind"] },
+              "lines": [
+                "They say the Font pours for you now. That you ask it for living things and it says yes.",
+                "The old world asked it for things too. The lakes are clear enough to read the answer, if you ever want to look down."
+              ]
+            },
+            {
+              "lines": [
+                "Mind the water. It's clear as glass and that's the trick of it — clear just means you can see what the old world sank, not that it's gone.",
+                "Vats, hull-sections, whole caged shipments that never got unloaded. The mere keeps it all polished and waiting.",
+                "West along the shore is Saltwick. East is the drowned causeway, and the Font at the end of it. Only one of those is a kindness."
+              ],
+              "set_flags": ["mirrormere_met_brack"]
+            }
+          ]
+        },
+        {
+          "id": "angler_theo",
+          "x": 7,
+          "y": 12,
+          "name": "Angler Theo",
+          "lines": [
+            "Three rules of the mere: fish the reeds, never fish the deep glass, and if your float goes down slow — cut the line.",
+            "Slow means something's tasting it. Things that taste first were built careful, and careful things were built for war.",
+            "Caught a Lutrin pup in my keep-net last month. It handed me back my own sinkers, one by one, like an apology."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "saltwick_strand",
+      "name": "Saltwick",
+      "region": "mirrormere",
+      "settlement": "saltwick",
+      "spawn_x": 15,
+      "spawn_y": 9,
+      "rows": [
+        "##############################",
+        "##..........................##",
+        "##...####...####....####....##",
+        "##...####...####....####....##",
+        "##....s.......s.............##",
+        "##..,,,,,,,,,,,,,,,,,,,,,...##",
+        "##..,.....................,.##",
+        "##..,.....................,.##",
+        "##..,,,,,,,,,,,,,,,,,,,,,,,.##",
+        "##............................",
+        "##...~~~~~........~~~~~.....##",
+        "##..........................##",
+        "##..........................##",
+        "##############################"
+      ],
+      "warps": [
+        { "x": 29, "y": 9, "to_map": "mere_shallows", "to_x": 1, "to_y": 9 }
+      ],
+      "npcs": [
+        {
+          "id": "lockkeeper_dagny",
+          "x": 20,
+          "y": 6,
+          "name": "Lockkeeper Dagny",
+          "dialogue": [
+            {
+              "when": { "relapsed": ["the_font", true] },
+              "lines": [
+                "The weir gauges jumped last night. Warm outflow, steady pulse — that's not weather, that's a pump.",
+                "The Font is drawing again and my lock gates are a hundred years of rust. Whatever you did out there, it needs doing twice."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_font", "Purge"] },
+              "lines": [
+                "Outflow's stone cold. First winter the weir hasn't steamed since my grandmother kept it.",
+                "Half the town toasted you. The other half checked their nets, found them empty, and went to bed early. Both halves were right."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_font", "Reseed"] },
+              "lines": [
+                "The water coming through my gates runs warm and full of fry — wild fry, thrown, not decanted.",
+                "A lock only works if what's upstream means well. For the first time in my family's book, I get to write that it does."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_font", "Bind"] },
+              "lines": [
+                "So the Font answers to you. I keep the weir, so I'll say this plain, keeper to keeper:",
+                "every gate holds fine right up until the day someone wants it open more than you want it shut. Sleep near your levers."
+              ]
+            },
+            {
+              "lines": [
+                "Saltwick was built on stilts because our grandmothers didn't trust the shore, and the shore has never once earned better.",
+                "The weir keeps the drowned quarter drowned. The Font keeps its own counsel at the end of the causeway east of here.",
+                "Buy what you need at the post. Folk who walk toward the Font underloaded come back overboard, if they come back."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cob",
+          "x": 8,
+          "y": 11,
+          "name": "Cob",
+          "dialogue": [
+            {
+              "when": { "verdict": ["the_font", "Purge"] },
+              "lines": [
+                "The lake stopped humming. I used to fall asleep to it.",
+                "Gran says good riddance. But she sits up listening now, same as me."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_font", "Reseed"] },
+              "lines": [
+                "There are otter pups under the pier! Six! I named all of them, and two of the names are secret.",
+                "Gran says the mere's forgiven us. I didn't know it was us who did something."
+              ]
+            },
+            {
+              "lines": [
+                "I found a glass jar on the beach with a whole tiny town inside. Gran made me throw it back.",
+                "She says everything the water gives you, it's only lending. Even the Axolet that follows my skiff. ESPECIALLY the Axolet."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "drowned_causeway",
+      "name": "The Drowned Causeway",
+      "region": "mirrormere",
+      "spawn_x": 5,
+      "spawn_y": 8,
+      "encounter_rate": 0.13,
+      "encounters": [
+        { "species": "pinchit", "weight": 4, "min": 1, "max": 2 },
+        { "species": "axolet", "weight": 3 },
+        { "species": "eeluma", "weight": 2 },
+        { "species": "lutrin", "weight": 2, "min": 1, "max": 2 },
+        { "species": "balenu", "weight": 1, "min": 1, "max": 1 }
+      ],
+      "rows": [
+        "################################",
+        "##....~~~~~...................##",
+        "##....~~~~~....####...ggg.....##",
+        "##.............#DD#...ggg.....##",
+        "##.............#,,#...........##",
+        "##..ggg.........,,............##",
+        "##..ggg..,,,,,,,,,,,,,,,......##",
+        "##..ggg..,.............,......##",
+        ".........,.............,......##",
+        "##.......,.............,......##",
+        "##.......,,,,,,,,,,,,,,,......##",
+        "##...gggg..........gggg.......##",
+        "##...gggg..........gggg.......##",
+        "##....~~~~....................##",
+        "##............................##",
+        "################################"
+      ],
+      "warps": [
+        { "x": 0, "y": 8, "to_map": "mere_shallows", "to_x": 32, "to_y": 10 },
+        { "x": 16, "y": 3, "to_map": "font_f1", "to_x": 14, "to_y": 14 },
+        { "x": 17, "y": 3, "to_map": "font_f1", "to_x": 15, "to_y": 14 }
+      ],
+      "npcs": [
+        {
+          "id": "diver_maren",
+          "x": 7,
+          "y": 4,
+          "name": "Diver Maren",
+          "dialogue": [
+            {
+              "when": { "flags_none": ["mirrormere_gift"] },
+              "lines": [
+                "Hold up. You're walking at those doors, which makes you either the rider Saltwick keeps praying about or the next thing I fish out of the shallows.",
+                "I cut this gland off a war-unit that's been asleep under the causeway since before names. It still sighs when it's warm. Take it — it wants to work, and I want to stop hearing it."
+              ],
+              "set_flags": ["mirrormere_gift"],
+              "give_grafts": ["geyser_gland"]
+            },
+            {
+              "when": { "relapsed": ["the_font", true] },
+              "lines": [
+                "I was under the causeway an hour ago. The intake grates are turning again, slow, like something stretching in its sleep.",
+                "Whoever restarted the Font didn't drain the halls first. Everything you left alive down there is awake, armed, and wet."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_font", "Purge"] },
+              "lines": [
+                "I dove the outfall after you silenced it. Forty years of salvage down there and I couldn't take any of it.",
+                "It's a graveyard now, a real one. You don't strip a graveyard. You just surface quiet and stop telling people what's below."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_font", "Reseed"] },
+              "lines": [
+                "The drowned quarter has fish in the windows now. Balenu calves nose through the old streets like they're reading them.",
+                "The ruins didn't get less sad, exactly. They got lived in. Maybe that's the only mercy ruins are owed."
+              ]
+            },
+            {
+              "when": { "verdict": ["the_font", "Bind"] },
+              "lines": [
+                "The intake current changed the day you bound it. It pulls toward you now. I've felt it on every dive since.",
+                "I'm not saying it's wrong. I'm saying I used to salvage from the last people the Font obeyed, and none of them thought it was wrong either."
+              ]
+            },
+            {
+              "lines": [
+                "That's the Font. It filtered a city's water once — then the war came, and someone taught it to filter out everything except soldiers.",
+                "The doors have been sealed since the drowning. The lakes stayed clear all these years because it never stopped straining them. Kill it, and you'll finally learn what it's been holding back.",
+                "Whole streets are down there under the causeway. When the water's still, you can see the lamp posts. Don't look too long — divers who look too long start counting the doors."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settlements": [
+    {
+      "id": "saltwick",
+      "name": "Saltwick",
+      "region": "mirrormere",
+      "description": "A fishing town on black stilts above water it has never once trusted. Every house keeps a boat, a bell, and a list of what the mere has taken.",
+      "shop": [
+        { "graft": "brine_jet" },
+        { "graft": "tide_caul" },
+        { "graft": "cooling_gill" },
+        { "graft": "gnasher_jaw" },
+        { "graft": "geyser_gland" },
+        { "graft": "kelp_weave" },
+        { "graft": "shield_membrane" },
+        { "graft": "keen_lens", "price": 150 }
+      ],
+      "duelists": [
+        {
+          "id": "minnow",
+          "name": "Minnow",
+          "blurb": "A net-runner's daughter who duels off the pier for practice and pride, roughly in that order. Her otter fights better when she's losing.",
+          "rank_req": 0,
+          "practice": true,
+          "reward_scrip": 25,
+          "party": [
+            {
+              "species": "lutrin",
+              "name": "Pebble",
+              "grafts": [{ "limb": "foreleg_l", "slot": 0, "graft": "brine_jet" }]
+            }
+          ]
+        },
+        {
+          "id": "netmender_osha",
+          "name": "Netmender Osha",
+          "blurb": "Mends nets, mends creatures, mends duellists who get cocky. Fights patient and lets the water do the arguing.",
+          "rank_req": 1,
+          "practice": true,
+          "reward_scrip": 45,
+          "party": [
+            {
+              "species": "puffkin",
+              "name": "Osha's Bobber",
+              "grafts": [{ "limb": "harness", "slot": 0, "graft": "brine_jet" }]
+            },
+            {
+              "species": "axolet",
+              "name": "Osha's Stitch",
+              "grafts": [
+                { "limb": "gill_crown", "slot": 0, "graft": "keen_lens" },
+                { "limb": "forelimb_l", "slot": 0, "graft": "healing_pod" },
+                { "limb": "fin_tail", "slot": 0, "graft": "cooling_gill" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "creel",
+          "name": "Creel of the Shallows",
+          "blurb": "A wader who salvages the drowned quarter by feel, with his boots off. Stakes what he finds because keeping it feels like stealing from the lake.",
+          "rank_req": 1,
+          "practice": false,
+          "reward_scrip": 40,
+          "stake": "geyser_gland",
+          "min_stake_value": 70,
+          "party": [
+            {
+              "species": "pinchit",
+              "name": "Creel's Grudge",
+              "grafts": [
+                { "limb": "shell", "slot": 0, "graft": "geyser_gland" },
+                { "limb": "claw_l", "slot": 0, "graft": "brine_jet" },
+                { "limb": "legs_l", "slot": 0, "graft": "chitin_plate" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wrackmaster_hulde",
+          "name": "Wrackmaster Hulde",
+          "blurb": "Runs the salvage yard and the duelling ring with the same ledger. She stakes real kelp-mail and collects real debts.",
+          "rank_req": 2,
+          "practice": false,
+          "reward_scrip": 70,
+          "stake": "kelp_weave",
+          "min_stake_value": 110,
+          "party": [
+            {
+              "species": "pinchit",
+              "name": "Hulde's Anchor",
+              "grafts": [
+                { "limb": "shell", "slot": 0, "graft": "venom_needler" },
+                { "limb": "shell", "slot": 1, "graft": "kelp_weave" },
+                { "limb": "claw_r", "slot": 0, "graft": "sting_lash" }
+              ]
+            },
+            {
+              "species": "lutrin",
+              "name": "Hulde's Change",
+              "grafts": [{ "limb": "foreleg_r", "slot": 0, "graft": "static_barb" }]
+            }
+          ]
+        },
+        {
+          "id": "salt_saint_verel",
+          "name": "Salt-Saint Verel",
+          "blurb": "Saltwick's champion, who once dove the Font's outfall on a dare and came up changed. Duels only the proven, and stakes a bulwark worth a boat.",
+          "rank_req": 3,
+          "practice": false,
+          "reward_scrip": 120,
+          "stake": "gel_bastion",
+          "min_stake_value": 250,
+          "party": [
+            {
+              "species": "eeluma",
+              "name": "Verel's Lantern",
+              "grafts": [
+                { "limb": "dorsal_ridge", "slot": 0, "graft": "bolt_cannon" },
+                { "limb": "fin_l", "slot": 0, "graft": "geyser_gland" },
+                { "limb": "fin_r", "slot": 0, "graft": "shield_membrane" },
+                { "limb": "tail", "slot": 0, "graft": "marrow_battery" }
+              ]
+            },
+            {
+              "species": "balenu",
+              "name": "Verel's Hymn",
+              "grafts": [
+                { "limb": "fin_l", "slot": 0, "graft": "coral_maul" },
+                { "limb": "fin_r", "slot": 0, "graft": "magnetite_hide" },
+                { "limb": "back", "slot": 0, "graft": "kelp_weave" },
+                { "limb": "back", "slot": 1, "graft": "drip_sac" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "factories": [
+    {
+      "id": "the_font",
+      "name": "The Font",
+      "region": "mirrormere",
+      "description": "A drowned purification works that never stopped straining the lakes — and never stopped growing swimmers to guard what it strained out. The water above it is clear because the Font keeps every secret below the thermocline.",
+      "rider_upgrade": "SwiftCrossing",
+      "grows": ["lutrin", "puffkin", "axolet", "pinchit", "balenu"],
+      "grow_cost": 300,
+      "floors": [
+        {
+          "id": "font_f1",
+          "name": "The Font — Filtration Galleries",
+          "region": "mirrormere",
+          "spawn_x": 14,
+          "spawn_y": 14,
+          "encounter_rate": 0.2,
+          "encounters": [
+            { "species": "lutrin", "weight": 3, "min": 1, "max": 2 },
+            { "species": "axolet", "weight": 3 },
+            { "species": "pinchit", "weight": 3 },
+            { "species": "lumigrub", "weight": 2, "min": 1, "max": 2 },
+            { "species": "puffkin", "weight": 2 }
+          ],
+          "rows": [
+            "##############################",
+            "#============================#",
+            "#=VV==VV======vvv=====VV==VV=#",
+            "#=VV==VV======vvv=====VV==VV=#",
+            "#============================#",
+            "#====vvvv===========vvv======#",
+            "#====vvvv===========vvv======#",
+            "#============================#",
+            "#=D==========================#",
+            "#============================#",
+            "#=====VV==VV=====vvvv========#",
+            "#=====VV==VV=====vvvv========#",
+            "#============================#",
+            "#============================#",
+            "#============================#",
+            "##############DD##############"
+          ],
+          "warps": [
+            { "x": 14, "y": 15, "to_map": "drowned_causeway", "to_x": 16, "to_y": 4 },
+            { "x": 15, "y": 15, "to_map": "drowned_causeway", "to_x": 17, "to_y": 4 },
+            { "x": 2, "y": 8, "to_map": "font_f2", "to_x": 12, "to_y": 10 }
+          ]
+        },
+        {
+          "id": "font_f2",
+          "name": "The Font — The Stilling Basin",
+          "region": "mirrormere",
+          "spawn_x": 12,
+          "spawn_y": 10,
+          "encounter_rate": 0.18,
+          "encounters": [
+            { "species": "axolet", "weight": 3 },
+            { "species": "pinchit", "weight": 3 },
+            { "species": "eeluma", "weight": 2 },
+            { "species": "balenu", "weight": 1, "min": 1, "max": 1 }
+          ],
+          "rows": [
+            "##########################",
+            "#========================#",
+            "#==VV==VV====VV==VV======#",
+            "#========================#",
+            "#====vvv========vvv======#",
+            "#====vvv===HH===vvv======#",
+            "#========================#",
+            "#==vvv==========vvv======#",
+            "#==vvv==========vvv======#",
+            "#========================#",
+            "#========================#",
+            "#===========D============#",
+            "#========================#",
+            "##########################"
+          ],
+          "warps": [{ "x": 12, "y": 11, "to_map": "font_f1", "to_x": 3, "to_y": 8 }]
+        }
+      ],
+      "heart_guard": [
+        {
+          "species": "balenu",
+          "name": "The Font-Mother",
+          "grafts": [
+            { "limb": "fin_l", "slot": 0, "graft": "coral_maul" },
+            { "limb": "fin_r", "slot": 0, "graft": "gel_bastion" },
+            { "limb": "back", "slot": 0, "graft": "geyser_gland" },
+            { "limb": "back", "slot": 1, "graft": "drip_sac" }
+          ]
+        },
+        {
+          "species": "eeluma",
+          "name": "Undertow",
+          "grafts": [
+            { "limb": "dorsal_ridge", "slot": 0, "graft": "storm_lung" },
+            { "limb": "fin_l", "slot": 0, "graft": "arc_whip" },
+            { "limb": "tail", "slot": 0, "graft": "shield_membrane" }
+          ]
+        },
+        {
+          "species": "pinchit",
+          "name": "Wrack",
+          "grafts": [
+            { "limb": "shell", "slot": 0, "graft": "venom_needler" },
+            { "limb": "shell", "slot": 1, "graft": "kelp_weave" },
+            { "limb": "claw_l", "slot": 0, "graft": "brine_jet" }
+          ]
+        },
+        {
+          "species": "axolet",
+          "name": "Silt",
+          "grafts": [
+            { "limb": "gill_crown", "slot": 0, "graft": "keen_lens" },
+            { "limb": "forelimb_l", "slot": 0, "graft": "healing_pod" },
+            { "limb": "forelimb_r", "slot": 0, "graft": "cooling_gill" }
+          ]
+        }
+      ]
+    }
+  ]
+}

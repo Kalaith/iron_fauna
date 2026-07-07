@@ -5,11 +5,13 @@ use crate::combat::unit::UnitSpec;
 use crate::combat::{resolve, BattleContext, RiderMods, Side, Stance};
 use crate::data::GameData;
 use crate::model::duel::{self, PendingDuel};
+use crate::model::worldstate::Verdict;
 use crate::state::{migrate_save_value, GameSession, SaveData};
 use crate::ui::battle::{BattleScreen, BattleScreenResult};
 use crate::ui::outfit::{OutfitAction, OutfitScreen};
 use crate::ui::overworld::{OverworldResult, OverworldScreen};
 use crate::ui::settlement::{sell_price, SettlementAction, SettlementScreen, SettlementView};
+use crate::ui::verdict::{FactoryScreenKind, VerdictAction, VerdictScreen};
 use crate::ui::{self, MenuContext, UiAction};
 use macroquad::prelude::*;
 use macroquad_toolkit::assets::AssetManager;
@@ -23,10 +25,11 @@ use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_fr
 
 enum Mode {
     Menu,
-    Overworld(OverworldScreen),
+    Overworld(Box<OverworldScreen>),
     Settlement(SettlementScreen),
     Outfit(OutfitScreen),
     Battle(Box<BattleScreen>),
+    FactoryHeart(VerdictScreen),
 }
 
 /// Where a sub-screen (battle, bench) hands control back to.
@@ -35,6 +38,14 @@ enum ReturnTo {
     Menu,
     Overworld,
     Settlement(String),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BossKind {
+    /// First assault on a live factory heart.
+    Heart,
+    /// Confronting a relapsed region's new keeper (§9.1).
+    Relapse,
 }
 
 pub struct Game {
@@ -46,6 +57,8 @@ pub struct Game {
     mode: Mode,
     return_to: ReturnTo,
     pending_duel: Option<PendingDuel>,
+    /// Set while a factory-heart or relapse-confrontation fight is underway.
+    pending_boss: Option<(String, BossKind)>,
     save_exists: bool,
 }
 
@@ -72,6 +85,7 @@ impl Game {
             mode: Mode::Menu,
             return_to: ReturnTo::Menu,
             pending_duel: None,
+            pending_boss: None,
             save_exists,
         }
     }
@@ -81,7 +95,7 @@ impl Game {
         match scene {
             "overworld" => {
                 self.return_to = ReturnTo::Overworld;
-                self.mode = Mode::Overworld(OverworldScreen::new(&self.session));
+                self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
             }
             "battle" => {
                 self.return_to = ReturnTo::Menu;
@@ -98,6 +112,21 @@ impl Game {
                 screen.view = SettlementView::Ring;
                 self.mode = Mode::Settlement(screen);
             }
+            "factory" => {
+                self.session.location = crate::state::Location {
+                    map_id: "cradle_f1".to_owned(),
+                    x: 14,
+                    y: 13,
+                };
+                self.return_to = ReturnTo::Overworld;
+                self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
+            }
+            "verdict" => {
+                self.mode = Mode::FactoryHeart(VerdictScreen {
+                    factory_id: "the_cradle".to_owned(),
+                    kind: FactoryScreenKind::Verdict,
+                });
+            }
             _ => self.mode = Mode::Menu,
         }
     }
@@ -105,7 +134,7 @@ impl Game {
     fn resume(&mut self) {
         self.mode = match &self.return_to {
             ReturnTo::Menu => Mode::Menu,
-            ReturnTo::Overworld => Mode::Overworld(OverworldScreen::new(&self.session)),
+            ReturnTo::Overworld => Mode::Overworld(Box::new(OverworldScreen::new(&self.session))),
             ReturnTo::Settlement(id) => Mode::Settlement(SettlementScreen::new(id)),
         };
     }
@@ -135,8 +164,72 @@ impl Game {
                     self.return_to = ReturnTo::Overworld;
                     self.start_battle(BattleContext::WildSubdue, pack);
                 }
+                OverworldResult::HeartInteract(factory_id) => self.heart_interact(&factory_id),
             },
             _ => {}
+        }
+    }
+
+    fn guard_specs(&self, factory_id: &str, relapse: bool) -> Vec<UnitSpec> {
+        let Some(factory) = self.data.factories.get(factory_id) else {
+            return Vec::new();
+        };
+        factory
+            .heart_guard
+            .iter()
+            .map(|u| UnitSpec {
+                species_id: u.species.clone(),
+                name: if relapse {
+                    format!("Relapsed {}", u.name.clone().unwrap_or_default())
+                } else {
+                    u.name.clone().unwrap_or_else(|| factory.name.clone())
+                },
+                side: Side::Enemy,
+                creature_id: None,
+                bond: 0.0,
+                stance: Stance::Aggressive,
+                grafts: u
+                    .grafts
+                    .iter()
+                    .map(|g| (g.limb.clone(), g.slot, g.graft.clone(), None))
+                    .collect(),
+            })
+            .collect()
+    }
+
+    fn heart_interact(&mut self, factory_id: &str) {
+        let state = self.session.world_state.factory(factory_id);
+        if !state.heart_defeated {
+            // The heart defends itself: the authored guardian fight.
+            let enemy = self.guard_specs(factory_id, false);
+            if enemy.is_empty() {
+                return;
+            }
+            self.pending_boss = Some((factory_id.to_owned(), BossKind::Heart));
+            self.return_to = ReturnTo::Overworld;
+            self.start_battle(BattleContext::FactoryDismantle, enemy);
+        } else if state.relapsed {
+            // The place you saved, militarized — confront what you made
+            // possible (`game_design.md` §9.1).
+            let enemy = self.guard_specs(factory_id, true);
+            if enemy.is_empty() {
+                return;
+            }
+            self.pending_boss = Some((factory_id.to_owned(), BossKind::Relapse));
+            self.return_to = ReturnTo::Overworld;
+            self.start_battle(BattleContext::FactoryDismantle, enemy);
+        } else if state.verdict == Some(Verdict::Bind) {
+            self.mode = Mode::FactoryHeart(VerdictScreen {
+                factory_id: factory_id.to_owned(),
+                kind: FactoryScreenKind::Grow,
+            });
+        } else if state.verdict.is_none() {
+            self.mode = Mode::FactoryHeart(VerdictScreen {
+                factory_id: factory_id.to_owned(),
+                kind: FactoryScreenKind::Verdict,
+            });
+        } else {
+            self.notifications.info("The vats are still. It is done.");
         }
     }
 
@@ -148,11 +241,11 @@ impl Game {
         for line in summary.lines {
             self.notifications.info(line);
         }
+        let won = matches!(
+            screen.battle.outcome,
+            Some(crate::combat::BattleOutcome::Victory(_))
+        );
         if let Some(pending) = self.pending_duel.take() {
-            let won = matches!(
-                screen.battle.outcome,
-                Some(crate::combat::BattleOutcome::Victory(_))
-            );
             let duelist = self
                 .data
                 .settlements
@@ -164,6 +257,41 @@ impl Game {
                     duel::apply_duel_result(&mut self.session, &self.data, &pending, &duelist, won)
                 {
                     self.notifications.info(line);
+                }
+            }
+        }
+        if let Some((factory_id, kind)) = self.pending_boss.take() {
+            if won {
+                match kind {
+                    BossKind::Heart => {
+                        self.session
+                            .world_state
+                            .factory_mut(&factory_id)
+                            .heart_defeated = true;
+                        // Defeating a Gestarium marks the rider (§3).
+                        if let Some(factory) = self.data.factories.get(&factory_id) {
+                            if self.session.profile.rider.grant(factory.rider_upgrade) {
+                                self.notifications.success(format!(
+                                    "Rider upgrade: {} — {}",
+                                    factory.rider_upgrade.display_name(),
+                                    factory.rider_upgrade.description()
+                                ));
+                            }
+                        }
+                        self.mode = Mode::FactoryHeart(VerdictScreen {
+                            factory_id,
+                            kind: FactoryScreenKind::Verdict,
+                        });
+                        return;
+                    }
+                    BossKind::Relapse => {
+                        let state = self.session.world_state.factory_mut(&factory_id);
+                        state.relapsed = false;
+                        state.relapse_risk = 0.0;
+                        self.notifications.info(
+                            "The new keeper yields. The region breathes again — watch it closer this time.",
+                        );
+                    }
                 }
             }
         }
@@ -196,6 +324,7 @@ impl Game {
         let mut actions = Vec::new();
         let mut outfit_actions = Vec::new();
         let mut settlement_actions = Vec::new();
+        let mut verdict_actions = Vec::new();
         match &self.mode {
             Mode::Menu => {
                 let ctx = MenuContext {
@@ -214,6 +343,9 @@ impl Game {
                 outfit_actions = screen.draw(&self.data, &self.session, &virtual_ui);
             }
             Mode::Battle(screen) => screen.draw(&self.data),
+            Mode::FactoryHeart(screen) => {
+                verdict_actions = screen.draw(&self.data, &self.session, &virtual_ui);
+            }
         }
         end_virtual_ui_frame();
 
@@ -225,6 +357,9 @@ impl Game {
         }
         for action in settlement_actions {
             self.apply_settlement_action(action);
+        }
+        for action in verdict_actions {
+            self.apply_verdict_action(action);
         }
 
         self.notifications
@@ -242,7 +377,7 @@ impl Game {
             }
             UiAction::EnterWorld => {
                 self.return_to = ReturnTo::Overworld;
-                self.mode = Mode::Overworld(OverworldScreen::new(&self.session));
+                self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
             }
             UiAction::StartDevBattle => self.start_dev_battle(),
             UiAction::OpenOutfit => {
@@ -395,6 +530,81 @@ impl Game {
             }
             SettlementAction::Challenge { duelist, stake } => {
                 self.start_duel(&settlement_id, &duelist, stake);
+            }
+            SettlementAction::FundWatch => {
+                let cost = self.data.balance.world.watch_cost;
+                let factory_id = self
+                    .data
+                    .settlements
+                    .get(&settlement_id)
+                    .and_then(|s| self.data.world.region(&s.region))
+                    .map(|r| r.gestarium_id.clone());
+                let Some(factory_id) = factory_id else {
+                    return;
+                };
+                if self.session.profile.inventory.scrip < cost {
+                    self.notifications.warning("Not enough scrip");
+                    return;
+                }
+                self.session.profile.inventory.scrip -= cost;
+                self.session.world_state.factory_mut(&factory_id).invested = true;
+                self.notifications
+                    .success("The watch is funded. Someone will be looking.");
+            }
+        }
+    }
+
+    fn apply_verdict_action(&mut self, action: VerdictAction) {
+        let Mode::FactoryHeart(screen) = &self.mode else {
+            return;
+        };
+        let factory_id = screen.factory_id.clone();
+        match action {
+            VerdictAction::Close => {
+                self.return_to = ReturnTo::Overworld;
+                self.resume();
+            }
+            VerdictAction::Choose(verdict) => {
+                self.session.world_state.factory_mut(&factory_id).verdict = Some(verdict);
+                let line = match verdict {
+                    Verdict::Purge => {
+                        "The wombs burn. The region is safe now — and it will never be alive again."
+                    }
+                    Verdict::Reseed => {
+                        "The vats hum a softer note. Green will come back here. Watch it closely."
+                    }
+                    Verdict::Bind => {
+                        "The machine acknowledges a new keeper. It does not ask what you'll grow."
+                    }
+                };
+                self.notifications.info(line);
+                self.return_to = ReturnTo::Overworld;
+                self.resume();
+            }
+            VerdictAction::GrowCore(species_id) => {
+                let Some(factory) = self.data.factories.get(&factory_id).cloned() else {
+                    return;
+                };
+                if self.session.profile.inventory.scrip < factory.grow_cost {
+                    self.notifications.warning("Not enough scrip");
+                    return;
+                }
+                self.session.profile.inventory.scrip -= factory.grow_cost;
+                self.session.profile.spawn_creature(
+                    &self.data,
+                    &species_id,
+                    crate::model::creature::CreatureOrigin::Grown {
+                        factory_id: factory_id.clone(),
+                    },
+                );
+                let name = self
+                    .data
+                    .species
+                    .get(&species_id)
+                    .map(|s| s.name.as_str())
+                    .unwrap_or(&species_id);
+                self.notifications
+                    .success(format!("A {} opens its eyes in the vat", name));
             }
         }
     }
