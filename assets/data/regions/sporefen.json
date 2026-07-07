@@ -393,6 +393,15 @@
         },
         {
           "graft": "drip_sac"
+        },
+        {
+          "graft": "spore_lash"
+        },
+        {
+          "graft": "verdant_womb"
+        },
+        {
+          "graft": "frostweep_node"
         }
       ],
       "duelists": [

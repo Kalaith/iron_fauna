@@ -3,6 +3,7 @@
 use macroquad::prelude::*;
 use macroquad_toolkit::capture;
 
+mod audio;
 mod combat;
 mod data;
 mod game;

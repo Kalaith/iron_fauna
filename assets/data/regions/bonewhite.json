@@ -451,6 +451,24 @@
         },
         {
           "graft": "second_caul"
+        },
+        {
+          "graft": "tectonic_maul"
+        },
+        {
+          "graft": "abyssal_radiator"
+        },
+        {
+          "graft": "mother_bough"
+        },
+        {
+          "graft": "oracle_array"
+        },
+        {
+          "graft": "font_of_mending"
+        },
+        {
+          "graft": "bastion_caul"
         }
       ],
       "duelists": [

@@ -1,5 +1,6 @@
 //! High-level game loop and state transitions.
 
+use crate::audio::{Audio, Sfx};
 use crate::combat::engine::Battle;
 use crate::combat::unit::UnitSpec;
 use crate::combat::{resolve, BattleContext, RiderMods, Side, Stance};
@@ -58,6 +59,7 @@ pub struct Game {
     #[allow(dead_code)]
     assets: AssetManager,
     notifications: NotificationManager,
+    audio: Audio,
     mode: Mode,
     return_to: ReturnTo,
     pending_duel: Option<PendingDuel>,
@@ -80,12 +82,14 @@ impl Game {
 
         let session = GameSession::new_game(&data);
         let save_exists = slot_exists(&data.config.game_name, &data.config.save_slot);
+        let audio = Audio::load().await;
 
         Self {
             data,
             session,
             assets,
             notifications: NotificationManager::new(),
+            audio,
             mode: Mode::Menu,
             return_to: ReturnTo::Menu,
             pending_duel: None,
@@ -207,7 +211,7 @@ impl Game {
         self.notifications.update(dt);
 
         match &mut self.mode {
-            Mode::Battle(screen) => match screen.update(&self.data, dt) {
+            Mode::Battle(screen) => match screen.update(&self.data, &self.audio, dt) {
                 BattleScreenResult::Continue => {}
                 BattleScreenResult::Finished => self.finish_battle(),
             },
@@ -448,6 +452,7 @@ impl Game {
     }
 
     fn apply_action(&mut self, action: UiAction) {
+        self.audio.play(Sfx::Select);
         match action {
             UiAction::NewGame => {
                 self.session = GameSession::new_game(&self.data);
@@ -478,6 +483,7 @@ impl Game {
     }
 
     fn apply_outfit_action(&mut self, action: OutfitAction) {
+        self.audio.play(Sfx::Select);
         let Mode::Outfit(screen) = &mut self.mode else {
             return;
         };
@@ -537,6 +543,7 @@ impl Game {
     }
 
     fn apply_settlement_action(&mut self, action: SettlementAction) {
+        self.audio.play(Sfx::Select);
         let Mode::Settlement(screen) = &mut self.mode else {
             return;
         };
@@ -635,6 +642,7 @@ impl Game {
     }
 
     fn apply_verdict_action(&mut self, action: VerdictAction) {
+        self.audio.play(Sfx::Select);
         let Mode::FactoryHeart(screen) = &self.mode else {
             return;
         };

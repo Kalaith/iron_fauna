@@ -1,6 +1,7 @@
 //! The battle screen: side-view battlefield, ridden-creature controls,
 //! Wait/Active pacing, and outcome overlay.
 
+use crate::audio::{Audio, Sfx};
 use crate::combat::engine::Battle;
 use crate::combat::events::BattleEvent;
 use crate::combat::{BattleOutcome, CalledTarget, PlayerCommand, Side, Stance, UnitId};
@@ -83,7 +84,7 @@ impl BattleScreen {
         }
     }
 
-    pub fn update(&mut self, data: &GameData, dt: f32) -> BattleScreenResult {
+    pub fn update(&mut self, data: &GameData, audio: &Audio, dt: f32) -> BattleScreenResult {
         if self.battle.over() {
             return self.update_outcome();
         }
@@ -95,6 +96,9 @@ impl BattleScreen {
         for event in self.battle.drain_events() {
             if self.pace == PaceSetting::Wait && is_decision_point(&event) {
                 self.wait_pause = true;
+            }
+            if let Some(sfx) = sfx_for_event(&event) {
+                audio.play(sfx);
             }
             self.spawn_float(data, &event);
             if let Some(line) = describe_event(&self.battle, data, &event) {
@@ -961,6 +965,24 @@ impl BattleScreen {
 fn draw_bar(x: f32, y: f32, w: f32, h: f32, frac: f32, color: Color) {
     draw_rectangle(x, y, w, h, Color::new(0.12, 0.12, 0.14, 1.0));
     draw_rectangle(x, y, w * frac.clamp(0.0, 1.0), h, color);
+}
+
+/// Maps a battle event to its sound effect, if any.
+fn sfx_for_event(event: &BattleEvent) -> Option<Sfx> {
+    Some(match event {
+        BattleEvent::Hit { to_core, .. } => {
+            if *to_core {
+                Sfx::Crack
+            } else {
+                Sfx::Hit
+            }
+        }
+        BattleEvent::LimbSevered { .. } => Sfx::Sever,
+        BattleEvent::CoreCracked { .. } => Sfx::Crack,
+        BattleEvent::HopStarted { .. } => Sfx::Hop,
+        BattleEvent::GraftRejected { .. } | BattleEvent::BerserkStarted { .. } => Sfx::Reject,
+        _ => return None,
+    })
 }
 
 fn is_decision_point(event: &BattleEvent) -> bool {
