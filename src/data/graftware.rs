@@ -76,6 +76,35 @@ pub enum BoostEffect {
     Plain,
 }
 
+impl BoostEffect {
+    /// A one-line, player-facing description of what riding unlocks with this
+    /// graft equipped — None for `Plain` (nothing to advertise).
+    pub fn describe(self) -> Option<String> {
+        Some(match self {
+            BoostEffect::ChainArc { extra_targets, .. } => {
+                format!("its shots arc to {} more foe(s)", extra_targets)
+            }
+            BoostEffect::Barrage { extra_shots } => {
+                format!("it fires {} extra shot(s) per volley", extra_shots)
+            }
+            BoostEffect::Amplify { mult } => {
+                format!("its utility bursts hit {:.0}% harder", mult * 100.0)
+            }
+            BoostEffect::Bulwark { core_damage_mult } => format!(
+                "its plating shields the core ({:.0}% incoming)",
+                core_damage_mult * 100.0
+            ),
+            BoostEffect::Overgrowth { regrow_mult } => {
+                format!("its limbs regrow {:.0}% faster", regrow_mult * 100.0)
+            }
+            BoostEffect::Corrode { dps, duration } => {
+                format!("its hits corrode ({:.0}/s for {:.0}s)", dps, duration)
+            }
+            BoostEffect::Plain => return None,
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GraftwareDef {
     pub id: String,

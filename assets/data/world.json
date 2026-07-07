@@ -277,7 +277,19 @@
         "#........................................#",
         "############..################..##########"
       ],
-      "warps": [{ "x": 0, "y": 10, "to_map": "verdant_meadow", "to_x": 34, "to_y": 10 }],
+      "warps": [
+        { "x": 0, "y": 10, "to_map": "verdant_meadow", "to_x": 34, "to_y": 10 },
+        { "x": 8, "y": 0, "to_map": "mere_shallows", "to_x": 16, "to_y": 2 },
+        { "x": 9, "y": 0, "to_map": "mere_shallows", "to_x": 17, "to_y": 2 },
+        { "x": 24, "y": 0, "to_map": "spire_ascent", "to_x": 16, "to_y": 2 },
+        { "x": 25, "y": 0, "to_map": "spire_ascent", "to_x": 17, "to_y": 2 },
+        { "x": 41, "y": 8, "to_map": "ash_approach", "to_x": 2, "to_y": 8 },
+        { "x": 41, "y": 9, "to_map": "ash_approach", "to_x": 2, "to_y": 9 },
+        { "x": 30, "y": 21, "to_map": "fen_margin", "to_x": 16, "to_y": 15 },
+        { "x": 31, "y": 21, "to_map": "fen_margin", "to_x": 17, "to_y": 15 },
+        { "x": 12, "y": 21, "to_map": "bone_verge", "to_x": 16, "to_y": 15 },
+        { "x": 13, "y": 21, "to_map": "bone_verge", "to_x": 17, "to_y": 15 }
+      ],
       "npcs": [
         {
           "id": "tollkeeper_vex",

@@ -8,6 +8,8 @@ use crate::model::duel::{self, PendingDuel};
 use crate::model::worldstate::Verdict;
 use crate::state::{migrate_save_value, GameSession, SaveData};
 use crate::ui::battle::{BattleScreen, BattleScreenResult};
+use crate::ui::bestiary::BestiaryScreen;
+use crate::ui::ledger::LedgerScreen;
 use crate::ui::outfit::{OutfitAction, OutfitScreen};
 use crate::ui::overworld::{OverworldResult, OverworldScreen};
 use crate::ui::settlement::{sell_price, SettlementAction, SettlementScreen, SettlementView};
@@ -30,6 +32,8 @@ enum Mode {
     Outfit(OutfitScreen),
     Battle(Box<BattleScreen>),
     FactoryHeart(VerdictScreen),
+    Ledger(LedgerScreen),
+    Bestiary(BestiaryScreen),
 }
 
 /// Where a sub-screen (battle, bench) hands control back to.
@@ -101,6 +105,21 @@ impl Game {
                 self.return_to = ReturnTo::Menu;
                 self.start_dev_battle();
             }
+            "battle_aim" => {
+                self.return_to = ReturnTo::Menu;
+                self.session.battles_fought = 2; // wave with an armed war-unit
+                self.start_dev_battle();
+                if let Mode::Battle(screen) = &mut self.mode {
+                    screen.force_aim_capture(&self.data);
+                }
+            }
+            "battle_juice" => {
+                // Active pace so combat runs freely and floating text appears.
+                self.return_to = ReturnTo::Menu;
+                self.session.pace = crate::state::PaceSetting::Active;
+                self.session.battles_fought = 2;
+                self.start_dev_battle();
+            }
             "outfit" => {
                 self.mode = Mode::Outfit(OutfitScreen {
                     selected: self.session.profile.roster.party.first().copied(),
@@ -126,6 +145,51 @@ impl Game {
                     factory_id: "the_cradle".to_owned(),
                     kind: FactoryScreenKind::Verdict,
                 });
+            }
+            "endgame" => {
+                self.session.location = crate::state::Location {
+                    map_id: "ruin_field".to_owned(),
+                    x: 15,
+                    y: 8,
+                };
+                self.return_to = ReturnTo::Overworld;
+                self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
+            }
+            "bestiary" => {
+                // Seed a partial collection so the screen shows both states.
+                for sp in [
+                    "weavil",
+                    "kestrelle",
+                    "pangol",
+                    "cervolt",
+                    "toxole",
+                    "tembolo",
+                ] {
+                    self.session.profile.spawn_creature(
+                        &self.data,
+                        sp,
+                        crate::model::creature::CreatureOrigin::Wild,
+                    );
+                }
+                self.mode = Mode::Bestiary(BestiaryScreen);
+            }
+            "ledger" => {
+                use crate::model::worldstate::Verdict;
+                let verdicts = [
+                    ("the_cradle", Verdict::Reseed, false),
+                    ("the_font", Verdict::Purge, false),
+                    ("the_spire", Verdict::Bind, false),
+                    ("the_kiln", Verdict::Reseed, true),
+                    ("the_bloom", Verdict::Purge, false),
+                    ("the_maw", Verdict::Reseed, false),
+                ];
+                for (id, v, relapsed) in verdicts {
+                    let s = self.session.world_state.factory_mut(id);
+                    s.heart_defeated = true;
+                    s.verdict = Some(v);
+                    s.relapsed = relapsed;
+                }
+                self.mode = Mode::Ledger(LedgerScreen);
             }
             _ => self.mode = Mode::Menu,
         }
@@ -325,6 +389,7 @@ impl Game {
         let mut outfit_actions = Vec::new();
         let mut settlement_actions = Vec::new();
         let mut verdict_actions = Vec::new();
+        let mut close_overlay = false;
         match &self.mode {
             Mode::Menu => {
                 let ctx = MenuContext {
@@ -346,6 +411,16 @@ impl Game {
             Mode::FactoryHeart(screen) => {
                 verdict_actions = screen.draw(&self.data, &self.session, &virtual_ui);
             }
+            Mode::Ledger(screen) => {
+                if screen.draw(&self.data, &self.session, &virtual_ui) {
+                    close_overlay = true;
+                }
+            }
+            Mode::Bestiary(screen) => {
+                if screen.draw(&self.data, &self.session, &virtual_ui) {
+                    close_overlay = true;
+                }
+            }
         }
         end_virtual_ui_frame();
 
@@ -360,6 +435,9 @@ impl Game {
         }
         for action in verdict_actions {
             self.apply_verdict_action(action);
+        }
+        if close_overlay {
+            self.mode = Mode::Menu;
         }
 
         self.notifications
@@ -387,6 +465,8 @@ impl Game {
                     selected_slot: None,
                 });
             }
+            UiAction::OpenLedger => self.mode = Mode::Ledger(LedgerScreen),
+            UiAction::OpenBestiary => self.mode = Mode::Bestiary(BestiaryScreen),
             UiAction::Save => self.save_game(),
             UiAction::Load => self.load_game(),
             UiAction::TogglePace => {
@@ -579,7 +659,12 @@ impl Game {
                 };
                 self.notifications.info(line);
                 self.return_to = ReturnTo::Overworld;
-                self.resume();
+                // The last verdict in the world opens the closing reflection.
+                if self.session.world_state.all_judged(&self.data) {
+                    self.mode = Mode::Ledger(LedgerScreen);
+                } else {
+                    self.resume();
+                }
             }
             VerdictAction::GrowCore(species_id) => {
                 let Some(factory) = self.data.factories.get(&factory_id).cloned() else {

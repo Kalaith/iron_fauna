@@ -4,7 +4,9 @@
 use crate::combat::engine::Battle;
 use crate::combat::events::BattleEvent;
 use crate::combat::unit::UnitSpec;
-use crate::combat::{BattleContext, BattleOutcome, PlayerCommand, RiderMods, Side, Stance};
+use crate::combat::{
+    BattleContext, BattleOutcome, CalledTarget, PlayerCommand, RiderMods, Side, Stance, WeaponRef,
+};
 use crate::data::GameData;
 
 fn spec(species: &str, side: Side, grafts: Vec<(&str, usize, &str)>) -> UnitSpec {
@@ -32,6 +34,65 @@ fn run_to_outcome(battle: &mut Battle, data: &GameData, max_seconds: f32) -> Vec
         t += dt;
     }
     all_events
+}
+
+#[test]
+fn called_shot_silences_the_targeted_graft() {
+    let data = GameData::load().unwrap();
+    // Player Bear with a long cannon vs an enemy Pangol carrying an ember
+    // spitter on its left arm. A called shot at that mount should destroy it
+    // specifically, not sever a random limb.
+    let mut battle = Battle::new(
+        &data,
+        BattleContext::FactoryDismantle,
+        &[spec(
+            "ferrobruin",
+            Side::Player,
+            vec![("back", 0, "bolt_cannon")],
+        )],
+        &[spec(
+            "pangol",
+            Side::Enemy,
+            vec![("arm_l", 0, "ember_spitter")],
+        )],
+        RiderMods::neutral(),
+        4,
+    )
+    .unwrap();
+    // Close the range so the shot connects, and find the enemy's graft mount.
+    battle.units[1].pos = battle.units[0].pos + 100.0;
+    let mount = battle.units[1]
+        .mounts
+        .iter()
+        .position(|m| m.def_id == "ember_spitter")
+        .unwrap();
+    let limb_index = battle.units[1].mounts[mount].limb_index;
+
+    // Hammer the mount with called shots until it breaks (accuracy can miss).
+    let mut destroyed = false;
+    for _ in 0..60 {
+        battle.units[0].vigor = battle.units[0].vigor_max;
+        battle.units[0].mounts[0].cooldown = 0.0;
+        battle.try_attack(
+            &data,
+            0,
+            1,
+            WeaponRef::Mount(0),
+            Some(CalledTarget::Mount(mount)),
+            true,
+        );
+        if battle.units[1].mounts[mount].destroyed {
+            destroyed = true;
+            break;
+        }
+        // The limb hosting it must not have been severed out from under the
+        // called shot — the graft is what we aimed at.
+        assert!(
+            battle.units[1].limbs[limb_index].intact() || battle.units[1].mounts[mount].destroyed,
+            "called shot severed the limb instead of silencing the graft"
+        );
+    }
+    assert!(destroyed, "called shots never silenced the targeted graft");
 }
 
 #[test]

@@ -1,1 +1,895 @@
-{ "maps": [], "settlements": [], "factories": [] }
+{
+  "maps": [
+    {
+      "id": "bone_verge",
+      "name": "Bonewhite Verge",
+      "region": "bonewhite",
+      "rows": [
+        "##################################",
+        "#................................#",
+        "#...............,................#",
+        "#....^^^........,.......^^^......#",
+        "#....^^^........,.......^^^......#",
+        "#...............,...ggg..........#",
+        "#...............,...ggg..........#",
+        "#...............,.................",
+        "#...............,.................",
+        "#..,,,,,,,,,,,,,,,,,,,,,,,,,,,,..#",
+        "#...............,................#",
+        "#...............,................#",
+        "#.....^^^.......,.....^^^........#",
+        "#.....^^ggg.....,.....^^^........#",
+        "#.......ggg.....,................#",
+        "#...............,................#",
+        "#...............,................#",
+        "################..################"
+      ],
+      "spawn_x": 16,
+      "spawn_y": 14,
+      "encounter_rate": 0.1,
+      "encounters": [
+        {
+          "species": "dillobun",
+          "weight": 4
+        },
+        {
+          "species": "pangol",
+          "weight": 3
+        },
+        {
+          "species": "vulchi",
+          "weight": 2
+        },
+        {
+          "species": "scorpip",
+          "weight": 2
+        }
+      ],
+      "warps": [
+        {
+          "x": 16,
+          "y": 17,
+          "to_map": "crossroads",
+          "to_x": 12,
+          "to_y": 20
+        },
+        {
+          "x": 17,
+          "y": 17,
+          "to_map": "crossroads",
+          "to_x": 13,
+          "to_y": 20
+        },
+        {
+          "x": 33,
+          "y": 7,
+          "to_map": "lastlight",
+          "to_x": 1,
+          "to_y": 7
+        },
+        {
+          "x": 33,
+          "y": 8,
+          "to_map": "lastlight",
+          "to_x": 1,
+          "to_y": 8
+        }
+      ],
+      "npcs": [
+        {
+          "id": "scavenger_hedd",
+          "x": 12,
+          "y": 9,
+          "name": "Scavenger Hedd",
+          "dialogue": [
+            {
+              "lines": [
+                "Salt eats everything out here but the ruins and the grudges. Watch where the white crusts \u2014 that's where the ground goes soft.",
+                "The Maw's east, past Lastlight. Nobody who walks in walks the same way out. You'll fit right in, orphan."
+              ],
+              "set_flags": [
+                "bonewhite_met"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lastlight",
+      "name": "Lastlight",
+      "region": "bonewhite",
+      "rows": [
+        "##################################",
+        "#................................#",
+        "#....####......####.....####.....#",
+        "#....####......####.....####.....#",
+        "#.....,..................,.......#",
+        "#.....,..................,.......#",
+        "#.....,..................,........",
+        "......,,.................,........",
+        "......,..................,.......#",
+        "#.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.#",
+        "#................................#",
+        "#..........^^^......^^^..........#",
+        "#..........^^^......^^^..........#",
+        "##################################"
+      ],
+      "spawn_x": 3,
+      "spawn_y": 7,
+      "warps": [
+        {
+          "x": 0,
+          "y": 7,
+          "to_map": "bone_verge",
+          "to_x": 31,
+          "to_y": 7
+        },
+        {
+          "x": 0,
+          "y": 8,
+          "to_map": "bone_verge",
+          "to_x": 31,
+          "to_y": 8
+        },
+        {
+          "x": 33,
+          "y": 6,
+          "to_map": "ruin_field",
+          "to_x": 1,
+          "to_y": 6
+        },
+        {
+          "x": 33,
+          "y": 7,
+          "to_map": "ruin_field",
+          "to_x": 1,
+          "to_y": 7
+        }
+      ],
+      "npcs": [
+        {
+          "id": "archivist_wren",
+          "x": 16,
+          "y": 7,
+          "name": "Archivist Wren",
+          "dialogue": [
+            {
+              "lines": [
+                "You came all this way to the last lit window in the world, and you want to know about the Maw. Everyone does, eventually.",
+                "I've spent forty years reading what the Progenitors left in the salt. Come back when you've stood in front of the Maw. Then I'll tell you the first true thing.",
+                "It won't comfort you. The true things out here never do."
+              ],
+              "when": {
+                "flags_none": [
+                  "bonewhite_truth1"
+                ]
+              },
+              "set_flags": [
+                "bonewhite_truth1"
+              ]
+            },
+            {
+              "lines": [
+                "You've silenced it. Good. Now the truth I promised.",
+                "The Progenitors weren't monsters. That's the horror of it. They were us \u2014 people who woke every morning terrified for everyone they loved, in a world that was already ending around them.",
+                "Something was coming. We don't know what; the salt doesn't say. But they decided that to protect everyone, they would weaponize life itself. Grow soldiers from gentle things. Just until the danger passed.",
+                "The danger never passed. The weapons outlived the reason for them. And the Progenitors, protecting everyone, became the only thing left worth protecting everyone FROM."
+              ],
+              "when": {
+                "flags_all": [
+                  "bonewhite_truth1"
+                ],
+                "flags_none": [
+                  "bonewhite_truth2"
+                ],
+                "heart_defeated": "the_maw"
+              },
+              "set_flags": [
+                "bonewhite_truth2"
+              ]
+            },
+            {
+              "lines": [
+                "You know it all now. Every factory you've judged, you were judging them. Every core you've grafted, you were them, for a moment.",
+                "The question the salt leaves me \u2014 the only one \u2014 is whether knowing is enough to make you stop where they couldn't."
+              ],
+              "when": {
+                "flags_all": [
+                  "bonewhite_truth2"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "The Maw is the oldest of the six. The first womb, in the first region we killed. It remembers a purpose none of the others do.",
+                "Stand before it. Then come back to me. There are things I can only say after you've felt it breathe."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "keeper_alms",
+          "x": 25,
+          "y": 7,
+          "name": "Ring-Keeper Alms",
+          "dialogue": [
+            {
+              "lines": [
+                "It's turning again in the Flats \u2014 the one place we thought too dead to relapse. Someone found the green you grew and the machine beneath it. Go finish what you woke."
+              ],
+              "when": {
+                "relapsed": [
+                  "the_maw",
+                  true
+                ]
+              }
+            },
+            {
+              "lines": [
+                "You unmade the first womb. The Flats are quiet as the day they died \u2014 but that's the thing, they were already dead. You just made it honest."
+              ],
+              "when": {
+                "verdict": [
+                  "the_maw",
+                  "Purge"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "You woke the Maw gentle and the salt is BLOOMING, rider \u2014 white gone to green in a place that forgot green. And I am so afraid of how much I want it to last."
+              ],
+              "when": {
+                "verdict": [
+                  "the_maw",
+                  "Reseed"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "The oldest machine answers to you now. The Progenitors' own first engine, in your hand. Wren could tell you how that story ends. Ask her. Please ask her."
+              ],
+              "when": {
+                "verdict": [
+                  "the_maw",
+                  "Bind"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "You've earned the deepest thing in my vault. Progenitor-work, pulled whole from the salt. It was built to protect everyone. Carry it better than they did."
+              ],
+              "when": {
+                "flags_none": [
+                  "bonewhite_gift"
+                ]
+              },
+              "set_flags": [
+                "bonewhite_gift"
+              ],
+              "give_grafts": [
+                "progenitor_aegis"
+              ]
+            },
+            {
+              "lines": [
+                "Lastlight's the final ring before the Maw. The ante here is everything, because out here everything is already half-lost."
+              ],
+              "set_flags": [
+                "bonewhite_keeper"
+              ]
+            }
+          ]
+        }
+      ],
+      "settlement": "lastlight"
+    },
+    {
+      "id": "ruin_field",
+      "name": "The Ruin Field",
+      "region": "bonewhite",
+      "rows": [
+        "##################################",
+        "#................................#",
+        "#...^^^...............###^^......#",
+        "#...^^^.......####....###^^......#",
+        "#.............####...............#",
+        "#..............DD................#",
+        "...............,,................#",
+        "...............,.................#",
+        "#..,,,,,,,,,,,,,,,,,,,,,,,,,,,,..#",
+        "#................................#",
+        "#.........ggg....................#",
+        "#....^^^##ggg.............^^^....#",
+        "#....^^^###...............^^^....#",
+        "#...................^^^..........#",
+        "#...................^^^..........#",
+        "##################################"
+      ],
+      "spawn_x": 2,
+      "spawn_y": 6,
+      "encounter_rate": 0.11,
+      "encounters": [
+        {
+          "species": "scorpip",
+          "weight": 3
+        },
+        {
+          "species": "vulchi",
+          "weight": 3
+        },
+        {
+          "species": "tembolo",
+          "weight": 1
+        },
+        {
+          "species": "pangol",
+          "weight": 2
+        }
+      ],
+      "warps": [
+        {
+          "x": 0,
+          "y": 6,
+          "to_map": "lastlight",
+          "to_x": 31,
+          "to_y": 6
+        },
+        {
+          "x": 0,
+          "y": 7,
+          "to_map": "lastlight",
+          "to_x": 31,
+          "to_y": 7
+        },
+        {
+          "x": 15,
+          "y": 5,
+          "to_map": "maw_f1",
+          "to_x": 14,
+          "to_y": 13
+        },
+        {
+          "x": 16,
+          "y": 5,
+          "to_map": "maw_f1",
+          "to_x": 15,
+          "to_y": 13
+        }
+      ],
+      "npcs": [
+        {
+          "id": "pilgrim_sabel",
+          "x": 24,
+          "y": 7,
+          "name": "Pilgrim Sabel",
+          "dialogue": [
+            {
+              "lines": [
+                "The relapse reached even here. The first place. If the Maw can slide back, nothing you've built is safe. Go, and this time understand what you're choosing."
+              ],
+              "when": {
+                "relapsed": [
+                  "the_maw",
+                  true
+                ]
+              }
+            },
+            {
+              "lines": [
+                "I walked a thousand miles to see the first womb die. I thought I'd feel triumph. I felt like I'd buried my own grandmother, and I never met her."
+              ],
+              "when": {
+                "verdict": [
+                  "the_maw",
+                  "Purge"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "The oldest ruin is growing MOSS, rider. I've prayed at a hundred dead shrines and this is the first that ever answered."
+              ],
+              "when": {
+                "verdict": [
+                  "the_maw",
+                  "Reseed"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "You kept the Progenitors' own first machine. I don't know whether to kneel to you or run. I think that's the correct response to what you are now."
+              ],
+              "when": {
+                "verdict": [
+                  "the_maw",
+                  "Bind"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "These ruins are the Progenitors' own. Look at the doorways \u2014 built for people. They lived here, loved here, and made the thing that ate them here. Same as us."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settlements": [
+    {
+      "id": "lastlight",
+      "name": "Lastlight",
+      "region": "bonewhite",
+      "description": "The last inhabited window before the Maw: a huddle of salvage-shacks around a single lamp that has not gone out in a hundred years, because letting it go out would mean agreeing that the Flats had won.",
+      "shop": [
+        {
+          "graft": "pebble_maw"
+        },
+        {
+          "graft": "quill_volley"
+        },
+        {
+          "graft": "bolt_cannon"
+        },
+        {
+          "graft": "bone_lattice"
+        },
+        {
+          "graft": "magnetite_hide"
+        },
+        {
+          "graft": "marrow_battery"
+        },
+        {
+          "graft": "gel_bastion"
+        },
+        {
+          "graft": "second_caul"
+        }
+      ],
+      "duelists": [
+        {
+          "id": "digger_pell",
+          "name": "Salt-Digger Pell",
+          "blurb": "Duels for water rights. Rides a dillo that simply refuses to fall.",
+          "rank_req": 0,
+          "practice": true,
+          "reward_scrip": 40,
+          "party": [
+            {
+              "species": "dillobun",
+              "name": "Pell's Stone",
+              "grafts": [
+                {
+                  "limb": "foreleg_l",
+                  "slot": 0,
+                  "graft": "pebble_maw"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wraith_odd",
+          "name": "Dust-Wraith Odd",
+          "blurb": "Fought his way up from nothing and stakes like he means to return there.",
+          "rank_req": 2,
+          "practice": false,
+          "reward_scrip": 180,
+          "stake": "quill_volley",
+          "min_stake_value": 300,
+          "party": [
+            {
+              "species": "scorpip",
+              "name": "Odd's Sting",
+              "grafts": [
+                {
+                  "limb": "claw_l",
+                  "slot": 0,
+                  "graft": "spore_mortar"
+                },
+                {
+                  "limb": "stinger",
+                  "slot": 0,
+                  "graft": "venom_needler"
+                },
+                {
+                  "limb": "claw_r",
+                  "slot": 0,
+                  "graft": "gel_bastion"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "reliquary_sain",
+          "name": "Reliquary Sain",
+          "blurb": "Wagers Progenitor salvage. Claims each piece is cursed, and duels to prove it on someone else.",
+          "rank_req": 3,
+          "practice": false,
+          "reward_scrip": 280,
+          "stake": "leviathan_jaw",
+          "min_stake_value": 600,
+          "party": [
+            {
+              "species": "tembolo",
+              "name": "Sain's Reliquary",
+              "grafts": [
+                {
+                  "limb": "howdah_back",
+                  "slot": 0,
+                  "graft": "leviathan_jaw"
+                },
+                {
+                  "limb": "foreleg_l",
+                  "slot": 0,
+                  "graft": "caldera_mantle"
+                },
+                {
+                  "limb": "trunk",
+                  "slot": 0,
+                  "graft": "spore_mortar"
+                }
+              ]
+            },
+            {
+              "species": "scorpip",
+              "name": "Sain's Verger",
+              "grafts": [
+                {
+                  "limb": "claw_l",
+                  "slot": 0,
+                  "graft": "quill_volley"
+                },
+                {
+                  "limb": "claw_r",
+                  "slot": 0,
+                  "graft": "gel_bastion"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "keeper_alms_duel",
+          "name": "Ring-Keeper Alms",
+          "blurb": "The last ring's master. The hardest duel this side of a factory heart, and the stake is Progenitor iron.",
+          "rank_req": 3,
+          "practice": false,
+          "reward_scrip": 400,
+          "stake": "sun_bore",
+          "min_stake_value": 900,
+          "party": [
+            {
+              "species": "tembolo",
+              "name": "Alms's Verdict",
+              "grafts": [
+                {
+                  "limb": "howdah_back",
+                  "slot": 0,
+                  "graft": "sun_bore"
+                },
+                {
+                  "limb": "howdah_back",
+                  "slot": 1,
+                  "graft": "progenitor_aegis"
+                },
+                {
+                  "limb": "foreleg_l",
+                  "slot": 0,
+                  "graft": "leviathan_jaw"
+                },
+                {
+                  "limb": "foreleg_r",
+                  "slot": 0,
+                  "graft": "caldera_mantle"
+                }
+              ]
+            },
+            {
+              "species": "scorpip",
+              "name": "Alms's Sentinel",
+              "grafts": [
+                {
+                  "limb": "claw_l",
+                  "slot": 0,
+                  "graft": "spore_mortar"
+                },
+                {
+                  "limb": "stinger",
+                  "slot": 0,
+                  "graft": "venom_needler"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "factories": [
+    {
+      "id": "the_maw",
+      "name": "The Maw",
+      "region": "bonewhite",
+      "description": "The first Gestarium the Progenitors ever built, in the first land their war killed. Its halls are shaped for human hands. It remembers being a workshop of hope, and it has been grinding out soldiers for so long it no longer knows the difference.",
+      "rider_upgrade": "Salvager",
+      "grow_cost": 800,
+      "grows": [
+        "pangol",
+        "dillobun",
+        "scorpip",
+        "vulchi",
+        "tembolo"
+      ],
+      "floors": [
+        {
+          "id": "maw_f1",
+          "name": "The Maw \u2014 First Halls",
+          "region": "bonewhite",
+          "rows": [
+            "##############################",
+            "#============================#",
+            "#===VV======VV======VV=======#",
+            "#===VV======VV======VV=======#",
+            "#=======vvv=====vvv==========#",
+            "#============================#",
+            "#=======================VV===#",
+            "#D======================VV===#",
+            "#============================#",
+            "#=========vvv=======vvv======#",
+            "#====VV===========VV=========#",
+            "#====VV===========VV====VV===#",
+            "#===========vvv=========VV===#",
+            "#============================#",
+            "#============================#",
+            "##############DD##############"
+          ],
+          "spawn_x": 14,
+          "spawn_y": 13,
+          "encounter_rate": 0.22,
+          "encounters": [
+            {
+              "species": "dillobun",
+              "weight": 3
+            },
+            {
+              "species": "scorpip",
+              "weight": 3
+            },
+            {
+              "species": "pangol",
+              "weight": 2
+            },
+            {
+              "species": "vulchi",
+              "weight": 2
+            }
+          ],
+          "warps": [
+            {
+              "x": 14,
+              "y": 15,
+              "to_map": "ruin_field",
+              "to_x": 15,
+              "to_y": 6
+            },
+            {
+              "x": 15,
+              "y": 15,
+              "to_map": "ruin_field",
+              "to_x": 16,
+              "to_y": 6
+            },
+            {
+              "x": 1,
+              "y": 7,
+              "to_map": "maw_f2",
+              "to_x": 13,
+              "to_y": 13
+            }
+          ]
+        },
+        {
+          "id": "maw_f2",
+          "name": "The Maw \u2014 The Deep Vats",
+          "region": "bonewhite",
+          "rows": [
+            "##############################",
+            "#============================#",
+            "#====VV=============VV=======#",
+            "#D===VV=============VV=======#",
+            "#=========vvv=====vvv========#",
+            "#============================#",
+            "#============================#",
+            "#=====VV==============VV=====#",
+            "#=====VV==============VV=====#",
+            "#===========vvv=====vvv======#",
+            "#============================#",
+            "#====VV=============VV=======#",
+            "#====VV===vvv=======VV=======#",
+            "#============================#",
+            "#============================#",
+            "#############DD###############"
+          ],
+          "spawn_x": 13,
+          "spawn_y": 13,
+          "encounter_rate": 0.24,
+          "encounters": [
+            {
+              "species": "scorpip",
+              "weight": 3
+            },
+            {
+              "species": "vulchi",
+              "weight": 3
+            },
+            {
+              "species": "tembolo",
+              "weight": 1
+            },
+            {
+              "species": "pangol",
+              "weight": 2
+            }
+          ],
+          "warps": [
+            {
+              "x": 13,
+              "y": 15,
+              "to_map": "maw_f1",
+              "to_x": 2,
+              "to_y": 7
+            },
+            {
+              "x": 14,
+              "y": 15,
+              "to_map": "maw_f1",
+              "to_x": 2,
+              "to_y": 7
+            },
+            {
+              "x": 1,
+              "y": 3,
+              "to_map": "maw_f3",
+              "to_x": 13,
+              "to_y": 11
+            }
+          ]
+        },
+        {
+          "id": "maw_f3",
+          "name": "The Maw \u2014 The First Womb",
+          "region": "bonewhite",
+          "rows": [
+            "############################",
+            "#==========================#",
+            "#==VV=================VV===#",
+            "#==VV===vvv=======vvv=VV===#",
+            "#==========================#",
+            "#============HH============#",
+            "#==========================#",
+            "#==========================#",
+            "#==========================#",
+            "#==VV=================VV===#",
+            "#==VV===vvv=======vvv=VV===#",
+            "#==========================#",
+            "#==========================#",
+            "#############DD#############"
+          ],
+          "spawn_x": 13,
+          "spawn_y": 11,
+          "encounter_rate": 0.16,
+          "encounters": [
+            {
+              "species": "scorpip",
+              "weight": 2
+            },
+            {
+              "species": "tembolo",
+              "weight": 1
+            },
+            {
+              "species": "vulchi",
+              "weight": 2
+            }
+          ],
+          "warps": [
+            {
+              "x": 13,
+              "y": 13,
+              "to_map": "maw_f2",
+              "to_x": 2,
+              "to_y": 3
+            },
+            {
+              "x": 14,
+              "y": 13,
+              "to_map": "maw_f2",
+              "to_x": 2,
+              "to_y": 3
+            }
+          ]
+        }
+      ],
+      "heart_guard": [
+        {
+          "species": "tembolo",
+          "name": "Maw-Warden",
+          "grafts": [
+            {
+              "limb": "howdah_back",
+              "slot": 0,
+              "graft": "sun_bore"
+            },
+            {
+              "limb": "howdah_back",
+              "slot": 1,
+              "graft": "caldera_mantle"
+            },
+            {
+              "limb": "foreleg_l",
+              "slot": 0,
+              "graft": "leviathan_jaw"
+            },
+            {
+              "limb": "foreleg_r",
+              "slot": 0,
+              "graft": "progenitor_aegis"
+            }
+          ]
+        },
+        {
+          "species": "scorpip",
+          "name": "First-Watch Alpha",
+          "grafts": [
+            {
+              "limb": "claw_l",
+              "slot": 0,
+              "graft": "spore_mortar"
+            },
+            {
+              "limb": "stinger",
+              "slot": 0,
+              "graft": "venom_needler"
+            }
+          ]
+        },
+        {
+          "species": "scorpip",
+          "name": "First-Watch Beta",
+          "grafts": [
+            {
+              "limb": "claw_r",
+              "slot": 0,
+              "graft": "quill_volley"
+            },
+            {
+              "limb": "claw_l",
+              "slot": 0,
+              "graft": "gel_bastion"
+            }
+          ]
+        },
+        {
+          "species": "vulchi",
+          "name": "First-Watch Wing",
+          "grafts": [
+            {
+              "limb": "harness",
+              "slot": 0,
+              "graft": "spit_gland"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

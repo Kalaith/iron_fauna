@@ -87,6 +87,19 @@ impl CreatureInstance {
             .find(|m| m.limb_id == limb_id && m.slot == slot)
     }
 
+    /// What riding this creature unlocks, given its current loadout — the
+    /// Boost is species- and kit-dependent (`combat.md` §3.2). One line per
+    /// equipped graft that contributes a boost.
+    pub fn boost_summary(&self, data: &GameData, inv: &Inventory) -> Vec<String> {
+        self.loadout
+            .iter()
+            .filter_map(|m| inv.item(m.item_id))
+            .filter(|i| i.is_usable())
+            .filter_map(|i| data.graftware.get(&i.def_id))
+            .filter_map(|def| def.boost.describe().map(|d| format!("{}: {}", def.name, d)))
+            .collect()
+    }
+
     /// Validates and applies an equip. Overdraw is legal; wrong weight class,
     /// missing mounts, an occupied slot, or an unmet Power floor are not.
     pub fn equip(
@@ -204,6 +217,19 @@ mod tests {
         // Same slot twice: rejected.
         let err = volpi.equip(&data, &inv, "foreleg_l", 0, 1).unwrap_err();
         assert!(matches!(err, EquipError::SlotOccupied));
+    }
+
+    #[test]
+    fn boost_summary_reflects_equipped_graftware() {
+        let (data, inv, mut volpi) = setup();
+        // Nothing equipped: no special boost lines.
+        assert!(volpi.boost_summary(&data, &inv).is_empty());
+        // Spark coil carries a ChainArc boost — it should surface.
+        volpi.equip(&data, &inv, "foreleg_l", 0, 1).unwrap();
+        let summary = volpi.boost_summary(&data, &inv);
+        assert_eq!(summary.len(), 1);
+        assert!(summary[0].contains("Spark Coil"));
+        assert!(summary[0].to_lowercase().contains("arc"));
     }
 
     #[test]

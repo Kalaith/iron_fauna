@@ -1,1 +1,738 @@
-{ "maps": [], "settlements": [], "factories": [] }
+{
+  "maps": [
+    {
+      "id": "fen_margin",
+      "name": "Fen Margin",
+      "region": "sporefen",
+      "rows": [
+        "##################################",
+        "#................................#",
+        "#...............,.....ggg........#",
+        "#.....~~~~~~~...,.....ggg........#",
+        "#.....~~~~~~~...,...~~~~~~~~.....#",
+        "#.....~~~~~~~...,...~~~~~~~~.....#",
+        "#...............,...~~~~~~~~.....#",
+        "#.....ggg.......,.................",
+        "#.....ggg.......,.................",
+        "#..,,,,,,,,,,,,,,,,,,,,,,,,,,,,..#",
+        "#...............,................#",
+        "#...~~~~~~~.....,...ggg..........#",
+        "#...~~~~~~~.....,...ggg..........#",
+        "#...~~~~~~~.....,.......ggg......#",
+        "#....ggg........,.......ggg......#",
+        "#....ggg........,................#",
+        "#...............,,...............#",
+        "################..################"
+      ],
+      "spawn_x": 16,
+      "spawn_y": 14,
+      "encounter_rate": 0.13,
+      "encounters": [
+        {
+          "species": "weavil",
+          "weight": 4
+        },
+        {
+          "species": "millipuff",
+          "weight": 4,
+          "max": 3
+        },
+        {
+          "species": "toxole",
+          "weight": 3
+        },
+        {
+          "species": "mossloth",
+          "weight": 2
+        }
+      ],
+      "warps": [
+        {
+          "x": 16,
+          "y": 17,
+          "to_map": "crossroads",
+          "to_x": 30,
+          "to_y": 20
+        },
+        {
+          "x": 17,
+          "y": 17,
+          "to_map": "crossroads",
+          "to_x": 31,
+          "to_y": 20
+        },
+        {
+          "x": 33,
+          "y": 7,
+          "to_map": "stiltmarket",
+          "to_x": 1,
+          "to_y": 7
+        },
+        {
+          "x": 33,
+          "y": 8,
+          "to_map": "stiltmarket",
+          "to_x": 1,
+          "to_y": 8
+        }
+      ],
+      "npcs": [
+        {
+          "id": "boatman_sil",
+          "x": 12,
+          "y": 9,
+          "name": "Boatman Sil",
+          "dialogue": [
+            {
+              "lines": [
+                "Keep to the reeds. The green water's honest \u2014 it's the still black pools that were dug on purpose.",
+                "You want the Bloom? Poll south past the market. Bring something that can heal, and someone worth healing for."
+              ],
+              "set_flags": [
+                "sporefen_met"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stiltmarket",
+      "name": "Stiltmarket",
+      "region": "sporefen",
+      "rows": [
+        "##################################",
+        "#................................#",
+        "#....####......####.....####.....#",
+        "#....####......####.....####.....#",
+        "#.....,..................,.......#",
+        "#.....,..................,.......#",
+        "#.....,..................,........",
+        "......,,.................,........",
+        "......,..................,.......#",
+        "#.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.#",
+        "#................................#",
+        "#.........~~~~......~~~~.........#",
+        "#.........~~~~......~~~~.........#",
+        "##################################"
+      ],
+      "spawn_x": 3,
+      "spawn_y": 7,
+      "warps": [
+        {
+          "x": 0,
+          "y": 7,
+          "to_map": "fen_margin",
+          "to_x": 31,
+          "to_y": 7
+        },
+        {
+          "x": 0,
+          "y": 8,
+          "to_map": "fen_margin",
+          "to_x": 31,
+          "to_y": 8
+        },
+        {
+          "x": 33,
+          "y": 6,
+          "to_map": "rot_causeway",
+          "to_x": 1,
+          "to_y": 6
+        },
+        {
+          "x": 33,
+          "y": 7,
+          "to_map": "rot_causeway",
+          "to_x": 1,
+          "to_y": 7
+        }
+      ],
+      "npcs": [
+        {
+          "id": "steward_mire",
+          "x": 16,
+          "y": 7,
+          "name": "Steward Mire",
+          "dialogue": [
+            {
+              "lines": [
+                "The reeds are full of grafted things again \u2014 home-made ones. We revived this rot and somebody used it as a recipe. Go to the heart and unmake them."
+              ],
+              "when": {
+                "relapsed": [
+                  "the_bloom",
+                  true
+                ]
+              }
+            },
+            {
+              "lines": [
+                "The Bloom's gone cold and the water with it. Clean, they say. Dead-clean. The lanterns don't glow anymore \u2014 nothing to feed on."
+              ],
+              "when": {
+                "verdict": [
+                  "the_bloom",
+                  "Purge"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "The fen's digesting sweetness for once. Fish came back fat. And every stilt-hand watches that live Bloom like it might teach them a shortcut."
+              ],
+              "when": {
+                "verdict": [
+                  "the_bloom",
+                  "Reseed"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "You keep the Bloom. You decide what it dissolves and what it grows. The swamp always did have a keeper. Now it has a face."
+              ],
+              "when": {
+                "verdict": [
+                  "the_bloom",
+                  "Bind"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "Take this before you go south. Cut it out of a Bloom-thing that nearly digested my nephew. It heals whoever wears the beast \u2014 pass it on."
+              ],
+              "when": {
+                "flags_none": [
+                  "sporefen_gift"
+                ]
+              },
+              "set_flags": [
+                "sporefen_gift"
+              ],
+              "give_grafts": [
+                "cradle_gland"
+              ]
+            },
+            {
+              "lines": [
+                "Stiltmarket floats because the Bloom hasn't decided to sink it yet. We trade, we duel, we keep our feet dry and our debts drier."
+              ],
+              "set_flags": [
+                "sporefen_steward"
+              ]
+            }
+          ]
+        }
+      ],
+      "settlement": "stiltmarket"
+    },
+    {
+      "id": "rot_causeway",
+      "name": "Rot Causeway",
+      "region": "sporefen",
+      "rows": [
+        "##################################",
+        "#................................#",
+        "#................................#",
+        "#.............####...............#",
+        "#.............####...............#",
+        "#..............DD................#",
+        "...............,,................#",
+        "...............,.................#",
+        "#..,,,,,,,,,,,,,,,,,,,,,,,,,,,,..#",
+        "#................................#",
+        "#.....ggg...........ggg..........#",
+        "#...~~ggg~..........ggg~~~~~~....#",
+        "#...~~~~~~............~~~~~~~....#",
+        "#...~~~~~~.ggg........~~~~~~~....#",
+        "#..........ggg...................#",
+        "##################################"
+      ],
+      "spawn_x": 2,
+      "spawn_y": 6,
+      "encounter_rate": 0.14,
+      "encounters": [
+        {
+          "species": "toxole",
+          "weight": 3
+        },
+        {
+          "species": "mossloth",
+          "weight": 3
+        },
+        {
+          "species": "mantilly",
+          "weight": 2
+        },
+        {
+          "species": "millipuff",
+          "weight": 3,
+          "max": 3
+        }
+      ],
+      "warps": [
+        {
+          "x": 0,
+          "y": 6,
+          "to_map": "stiltmarket",
+          "to_x": 31,
+          "to_y": 6
+        },
+        {
+          "x": 0,
+          "y": 7,
+          "to_map": "stiltmarket",
+          "to_x": 31,
+          "to_y": 7
+        },
+        {
+          "x": 15,
+          "y": 5,
+          "to_map": "bloom_f1",
+          "to_x": 14,
+          "to_y": 13
+        },
+        {
+          "x": 16,
+          "y": 5,
+          "to_map": "bloom_f1",
+          "to_x": 15,
+          "to_y": 13
+        }
+      ],
+      "npcs": [
+        {
+          "id": "gravedigger_oon",
+          "x": 22,
+          "y": 7,
+          "name": "Gravedigger Oon",
+          "dialogue": [
+            {
+              "lines": [
+                "They're grafting in the deep fen again. I've been digging graves for the new keeper's cast-offs all week. Go put a stop to the grafting, not just the graves."
+              ],
+              "when": {
+                "relapsed": [
+                  "the_bloom",
+                  true
+                ]
+              }
+            },
+            {
+              "lines": [
+                "Nothing rots here now. Do you understand what that means? I'm a gravedigger with nothing to dig. Peace put me out of work and I still can't celebrate."
+              ],
+              "when": {
+                "verdict": [
+                  "the_bloom",
+                  "Purge"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "The Bloom's soft-lit again, breathing spores like a sleeper. Pretty. I've buried enough to distrust pretty."
+              ],
+              "when": {
+                "verdict": [
+                  "the_bloom",
+                  "Reseed"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "Your Bloom. You choose what it eats. I'll keep a plot ready anyway \u2014 keepers of that machine tend to need one, in time."
+              ],
+              "when": {
+                "verdict": [
+                  "the_bloom",
+                  "Bind"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "This causeway's built on what the Bloom couldn't digest. Walk soft. Some of it remembers being someone."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settlements": [
+    {
+      "id": "stiltmarket",
+      "name": "Stiltmarket",
+      "region": "sporefen",
+      "description": "A raft-town lashed between drowned trees, lit by spore-lanterns that feed on the same rot the Bloom does. Everything here is for sale, especially forgiveness.",
+      "shop": [
+        {
+          "graft": "sting_lash"
+        },
+        {
+          "graft": "spit_gland"
+        },
+        {
+          "graft": "thorn_launcher"
+        },
+        {
+          "graft": "bark_wrap"
+        },
+        {
+          "graft": "healing_pod"
+        },
+        {
+          "graft": "burr_gland"
+        },
+        {
+          "graft": "venom_needler"
+        },
+        {
+          "graft": "drip_sac"
+        }
+      ],
+      "duelists": [
+        {
+          "id": "reedgirl_possum",
+          "name": "Reed-Girl Possum",
+          "blurb": "Duels barefoot on the wet planks. Never once slipped. Rides a puff of millipede that swarms.",
+          "rank_req": 0,
+          "practice": true,
+          "reward_scrip": 35,
+          "party": [
+            {
+              "species": "millipuff",
+              "name": "Possum's Cloud",
+              "grafts": [
+                {
+                  "limb": "tail",
+                  "slot": 0,
+                  "graft": "sting_lash"
+                },
+                {
+                  "limb": "seg_fore_l",
+                  "slot": 0,
+                  "graft": "spit_gland"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "apoth_lench",
+          "name": "Apothecary Lench",
+          "blurb": "Wagers tinctures and toxins. Fights to fund a cure nobody's asked for.",
+          "rank_req": 1,
+          "practice": true,
+          "reward_scrip": 60,
+          "party": [
+            {
+              "species": "toxole",
+              "name": "Lench's Bile",
+              "grafts": [
+                {
+                  "limb": "forelimb_l",
+                  "slot": 0,
+                  "graft": "venom_needler"
+                },
+                {
+                  "limb": "wart_back",
+                  "slot": 0,
+                  "graft": "basalt_carapace"
+                }
+              ]
+            },
+            {
+              "species": "mossloth",
+              "name": "Lench's Poultice",
+              "grafts": [
+                {
+                  "limb": "moss_back",
+                  "slot": 0,
+                  "graft": "healing_pod"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "drowner_kase",
+          "name": "Drowner Kase",
+          "blurb": "Stakes what he salvages off the sunk. The fen gives him plenty.",
+          "rank_req": 1,
+          "practice": false,
+          "reward_scrip": 80,
+          "stake": "spore_mortar",
+          "min_stake_value": 200,
+          "party": [
+            {
+              "species": "mantilly",
+              "name": "Kase's Reaper",
+              "grafts": [
+                {
+                  "limb": "scythe_l",
+                  "slot": 0,
+                  "graft": "mulch_maul"
+                },
+                {
+                  "limb": "thorax",
+                  "slot": 0,
+                  "graft": "kelp_weave"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "steward_mire_duel",
+          "name": "Steward Mire",
+          "blurb": "Runs the ring and the town. Stakes deep-fen iron against anyone who's cleared her cadets.",
+          "rank_req": 2,
+          "practice": false,
+          "reward_scrip": 150,
+          "stake": "rot_howitzer",
+          "min_stake_value": 300,
+          "party": [
+            {
+              "species": "grubble",
+              "name": "Mire's Glutton",
+              "grafts": [
+                {
+                  "limb": "dorsal_ridge",
+                  "slot": 0,
+                  "graft": "rot_howitzer"
+                },
+                {
+                  "limb": "maw",
+                  "slot": 0,
+                  "graft": "spore_mortar"
+                },
+                {
+                  "limb": "spore_pouch",
+                  "slot": 0,
+                  "graft": "weeping_ironbark"
+                }
+              ]
+            },
+            {
+              "species": "mantilly",
+              "name": "Mire's Warden",
+              "grafts": [
+                {
+                  "limb": "scythe_l",
+                  "slot": 0,
+                  "graft": "weeping_ironbark"
+                },
+                {
+                  "limb": "scythe_r",
+                  "slot": 0,
+                  "graft": "mulch_maul"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "factories": [
+    {
+      "id": "the_bloom",
+      "name": "The Bloom",
+      "region": "sporefen",
+      "description": "A gestation-plant that learned to feed itself. It dissolves the dead of the fen into slurry and grows new soldiers from the sweetest of it. It is never quite finished eating.",
+      "rider_upgrade": "FieldMedic",
+      "grow_cost": 500,
+      "grows": [
+        "weavil",
+        "millipuff",
+        "toxole",
+        "mossloth",
+        "mantilly"
+      ],
+      "floors": [
+        {
+          "id": "bloom_f1",
+          "name": "The Bloom \u2014 Digestion Gallery",
+          "region": "sporefen",
+          "rows": [
+            "##############################",
+            "#============================#",
+            "#===VV======VV======VV=======#",
+            "#===VV======VV======VV=======#",
+            "#=======vvv=====vvv==========#",
+            "#============================#",
+            "#=======================VV===#",
+            "#D======================VV===#",
+            "#============================#",
+            "#=========vvv=======vvv======#",
+            "#====VV===========VV=========#",
+            "#====VV===========VV=========#",
+            "#===========vvv=====vvv======#",
+            "#============================#",
+            "#============================#",
+            "##############DD##############"
+          ],
+          "spawn_x": 14,
+          "spawn_y": 13,
+          "encounter_rate": 0.22,
+          "encounters": [
+            {
+              "species": "millipuff",
+              "weight": 3,
+              "max": 3
+            },
+            {
+              "species": "toxole",
+              "weight": 3
+            },
+            {
+              "species": "mossloth",
+              "weight": 2
+            },
+            {
+              "species": "weavil",
+              "weight": 2
+            }
+          ],
+          "warps": [
+            {
+              "x": 14,
+              "y": 15,
+              "to_map": "rot_causeway",
+              "to_x": 15,
+              "to_y": 6
+            },
+            {
+              "x": 15,
+              "y": 15,
+              "to_map": "rot_causeway",
+              "to_x": 16,
+              "to_y": 6
+            },
+            {
+              "x": 1,
+              "y": 7,
+              "to_map": "bloom_f2",
+              "to_x": 13,
+              "to_y": 11
+            }
+          ]
+        },
+        {
+          "id": "bloom_f2",
+          "name": "The Bloom \u2014 The Wet Heart",
+          "region": "sporefen",
+          "rows": [
+            "############################",
+            "#==========================#",
+            "#==VV=================VV===#",
+            "#==VV===vvv=======vvv=VV===#",
+            "#==========================#",
+            "#============HH============#",
+            "#==========================#",
+            "#==========================#",
+            "#==========================#",
+            "#==VV=================VV===#",
+            "#==VV===vvv=======vvv=VV===#",
+            "#==========================#",
+            "#==========================#",
+            "#############DD#############"
+          ],
+          "spawn_x": 13,
+          "spawn_y": 11,
+          "encounter_rate": 0.15,
+          "encounters": [
+            {
+              "species": "mantilly",
+              "weight": 3
+            },
+            {
+              "species": "toxole",
+              "weight": 2
+            },
+            {
+              "species": "mossloth",
+              "weight": 2
+            }
+          ],
+          "warps": [
+            {
+              "x": 13,
+              "y": 13,
+              "to_map": "bloom_f1",
+              "to_x": 2,
+              "to_y": 7
+            },
+            {
+              "x": 14,
+              "y": 13,
+              "to_map": "bloom_f1",
+              "to_x": 2,
+              "to_y": 7
+            }
+          ]
+        }
+      ],
+      "heart_guard": [
+        {
+          "species": "grubble",
+          "name": "Bloom-Warden",
+          "grafts": [
+            {
+              "limb": "dorsal_ridge",
+              "slot": 0,
+              "graft": "rot_howitzer"
+            },
+            {
+              "limb": "spore_pouch",
+              "slot": 0,
+              "graft": "magnetite_hide"
+            },
+            {
+              "limb": "maw",
+              "slot": 0,
+              "graft": "spore_mortar"
+            },
+            {
+              "limb": "stub_fore_l",
+              "slot": 0,
+              "graft": "venom_needler"
+            }
+          ]
+        },
+        {
+          "species": "mantilly",
+          "name": "Wet-Watch Alpha",
+          "grafts": [
+            {
+              "limb": "scythe_l",
+              "slot": 0,
+              "graft": "weeping_ironbark"
+            },
+            {
+              "limb": "thorax",
+              "slot": 0,
+              "graft": "spore_mortar"
+            }
+          ]
+        },
+        {
+          "species": "toxole",
+          "name": "Wet-Watch Spitter",
+          "grafts": [
+            {
+              "limb": "wart_back",
+              "slot": 0,
+              "graft": "venom_needler"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

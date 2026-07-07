@@ -1,6 +1,8 @@
 //! View layer: screens read state and return intents; game logic applies them.
 
 pub mod battle;
+pub mod bestiary;
+pub mod ledger;
 pub mod outfit;
 pub mod overworld;
 pub mod settlement;
@@ -23,6 +25,8 @@ pub enum UiAction {
     EnterWorld,
     StartDevBattle,
     OpenOutfit,
+    OpenBestiary,
+    OpenLedger,
     Save,
     Load,
     TogglePace,
@@ -78,11 +82,13 @@ pub fn draw_main_menu(ctx: &MenuContext<'_>) -> Vec<UiAction> {
         TextStyle::new(16.0, dark::TEXT_DIM).params(),
     );
 
-    let buttons: [(&str, UiAction, bool); 7] = [
+    let buttons: [(&str, UiAction, bool); 9] = [
         ("Enter the World", UiAction::EnterWorld, true),
         ("New Game", UiAction::NewGame, true),
         ("Dev Battle", UiAction::StartDevBattle, true),
         ("Party & Grafting", UiAction::OpenOutfit, true),
+        ("Bestiary", UiAction::OpenBestiary, true),
+        ("The World Ledger", UiAction::OpenLedger, true),
         ("Save", UiAction::Save, true),
         ("Load", UiAction::Load, ctx.save_exists),
         (
@@ -96,7 +102,7 @@ pub fn draw_main_menu(ctx: &MenuContext<'_>) -> Vec<UiAction> {
     ];
 
     for (i, (label, action, enabled)) in buttons.iter().enumerate() {
-        let rect = Rect::new(84.0, 300.0 + i as f32 * 58.0, 280.0, 44.0);
+        let rect = Rect::new(84.0, 282.0 + i as f32 * 46.0, 280.0, 38.0);
         if menu_button(rect, label, *enabled, mouse) {
             actions.push(action.clone());
         }

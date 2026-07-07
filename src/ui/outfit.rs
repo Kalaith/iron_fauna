@@ -269,7 +269,19 @@ impl OutfitScreen {
             y,
             TextStyle::new(15.0, dark::TEXT_DIM).params(),
         );
-        y += 26.0;
+        y += 20.0;
+        // Element synergy hint (`creature.md` §6).
+        draw_ui_text_ex(
+            &format!(
+                "{} chassis — {} graftware runs stronger here",
+                species.element.display_name(),
+                species.element.display_name()
+            ),
+            content.x,
+            y,
+            TextStyle::new(13.0, element_color(species.element)).params(),
+        );
+        y += 24.0;
 
         // Live Power Capacity readout (`creature.md` §5).
         let capacity = species.derived(&data.balance).power_capacity;
@@ -388,6 +400,36 @@ impl OutfitScreen {
             y + 8.0,
             TextStyle::new(13.0, dark::TEXT_DIM).params(),
         );
+        y += 30.0;
+
+        // Boost preview: what riding this creature unlocks with this kit
+        // (`combat.md` §3.2 — Boost is species- and loadout-dependent).
+        let boosts = creature.boost_summary(data, &session.profile.inventory);
+        draw_ui_text_ex(
+            "When Ridden — the Boost",
+            content.x,
+            y,
+            TextStyle::new(15.0, Color::new(0.75, 0.85, 0.55, 1.0)).params(),
+        );
+        y += 18.0;
+        if boosts.is_empty() {
+            draw_ui_text_ex(
+                "faster Vigor and its strongest graft — no special surge yet",
+                content.x,
+                y,
+                TextStyle::new(12.0, dark::TEXT_DIM).params(),
+            );
+        } else {
+            for line in boosts.iter().take(4) {
+                draw_ui_text_ex(
+                    &format!("• {}", line),
+                    content.x,
+                    y,
+                    TextStyle::new(12.0, dark::TEXT).params(),
+                );
+                y += 16.0;
+            }
+        }
 
         // Rider progression summary (one upgrade per Gestarium).
         let mut ry = content.bottom() - 150.0;
@@ -437,6 +479,9 @@ impl OutfitScreen {
         let creature = self
             .selected
             .and_then(|id| session.profile.roster.creature(id));
+        // The selected creature's element — graftware sharing it synergizes
+        // (`creature.md` §6). Used to flag good picks live.
+        let creature_element = creature.map(|c| c.species(data).element);
 
         for item in &session.profile.inventory.items {
             if equipped.contains(&item.id) {
@@ -493,6 +538,17 @@ impl OutfitScreen {
                 row.y + 36.0,
                 TextStyle::new(12.0, dark::TEXT_DIM).params(),
             );
+            // Synergy flag: this part's element matches the creature's.
+            if let (Some(ce), Some(ge)) = (creature_element, def.element) {
+                if ce == ge {
+                    draw_text_right(
+                        "◆ synergy",
+                        row.right() - 10.0,
+                        row.y + 18.0,
+                        TextStyle::new(13.0, element_color(ge)),
+                    );
+                }
+            }
 
             if item.is_usable() {
                 if let (Some((limb_id, slot)), Some(c)) = (slot_sel, creature) {

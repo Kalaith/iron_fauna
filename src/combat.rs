@@ -12,6 +12,8 @@ pub mod resolve;
 pub mod unit;
 
 #[cfg(test)]
+mod balance_tests;
+#[cfg(test)]
 mod sim_tests;
 
 use crate::model::rider::Rider;

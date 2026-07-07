@@ -39,6 +39,19 @@ impl Roster {
             .filter(|c| !self.party.contains(&c.id))
     }
 
+    /// Whether the collection includes at least one core of this species.
+    pub fn owns_species(&self, species_id: &str) -> bool {
+        self.creatures.iter().any(|c| c.species_id == species_id)
+    }
+
+    /// How many cores of this species the collection holds.
+    pub fn species_count(&self, species_id: &str) -> usize {
+        self.creatures
+            .iter()
+            .filter(|c| c.species_id == species_id)
+            .count()
+    }
+
     pub fn slots_used(&self, data: &GameData) -> u32 {
         self.party_members()
             .map(|c| c.species(data).size.slot_cost())

@@ -4,6 +4,7 @@
 use crate::combat::engine::Battle;
 use crate::combat::events::BattleEvent;
 use crate::combat::{BattleOutcome, CalledTarget, PlayerCommand, Side, Stance, UnitId};
+use crate::data::species::LimbRegion;
 use crate::data::GameData;
 use crate::state::PaceSetting;
 use crate::ui::{element_color, LOGICAL_HEIGHT, LOGICAL_WIDTH};
@@ -26,10 +27,24 @@ pub struct BattleScreen {
     manual_pause: bool,
     wait_pause: bool,
     target: UnitId,
-    /// Cycled called-shot selection on the current target.
+    /// Directional called-shot selection on the current target.
     called: Option<CalledTarget>,
+    /// Aim mode: arrows pick the targeted limb region (`combat.md` §3.1).
+    aim: bool,
     log: Vec<String>,
+    /// Rising, fading combat text spawned from battle events.
+    floats: Vec<FloatText>,
     outcome_shown: bool,
+}
+
+/// One piece of floating combat text (damage, "MISS", "SEVERED!", …).
+struct FloatText {
+    x: f32,
+    y: f32,
+    text: String,
+    color: Color,
+    age: f32,
+    ttl: f32,
 }
 
 impl BattleScreen {
@@ -42,9 +57,18 @@ impl BattleScreen {
             wait_pause: false,
             target,
             called: None,
+            aim: false,
             log: vec!["The shells close in.".to_owned()],
+            floats: Vec::new(),
             outcome_shown: false,
         }
+    }
+
+    /// Test/capture hook: force aim mode and a called shot for a screenshot.
+    pub fn force_aim_capture(&mut self, data: &GameData) {
+        self.aim = true;
+        self.called = self.called_in_regions(data, &[LimbRegion::ArmLeft]);
+        self.manual_pause = true;
     }
 
     fn paused(&self) -> bool {
@@ -72,6 +96,7 @@ impl BattleScreen {
             if self.pace == PaceSetting::Wait && is_decision_point(&event) {
                 self.wait_pause = true;
             }
+            self.spawn_float(data, &event);
             if let Some(line) = describe_event(&self.battle, data, &event) {
                 self.log.push(line);
             }
@@ -80,7 +105,106 @@ impl BattleScreen {
             let excess = self.log.len() - 40;
             self.log.drain(..excess);
         }
+        // Age and retire floating text (only advances with the clock).
+        if !self.paused() {
+            for f in &mut self.floats {
+                f.age += dt;
+                f.y -= dt * 34.0;
+            }
+            self.floats.retain(|f| f.age < f.ttl);
+        }
         BattleScreenResult::Continue
+    }
+
+    /// Turns a battle event into a floating callout over the unit involved.
+    fn spawn_float(&mut self, data: &GameData, event: &BattleEvent) {
+        let at = |screen: &Self, id: UnitId| -> (f32, f32) {
+            let u = &screen.battle.units[id];
+            (
+                screen.world_to_screen(u.pos, data),
+                GROUND_Y - screen.size_radius(data, id) - 30.0,
+            )
+        };
+        let (x, y, text, color) = match event {
+            BattleEvent::Hit {
+                target,
+                amount,
+                to_core,
+                ..
+            } => {
+                let (x, y) = at(self, *target);
+                let col = if *to_core {
+                    Color::new(1.0, 0.55, 0.45, 1.0)
+                } else {
+                    Color::new(0.95, 0.9, 0.8, 1.0)
+                };
+                (x, y, format!("{:.0}", amount), col)
+            }
+            BattleEvent::Miss { target, .. } => {
+                let (x, y) = at(self, *target);
+                (x, y, "miss".to_owned(), Color::new(0.6, 0.65, 0.7, 1.0))
+            }
+            BattleEvent::LimbSevered { unit, .. } => {
+                let (x, y) = at(self, *unit);
+                (x, y, "SEVERED".to_owned(), Color::new(0.95, 0.4, 0.3, 1.0))
+            }
+            BattleEvent::GraftDestroyed { unit, .. } => {
+                let (x, y) = at(self, *unit);
+                (
+                    x,
+                    y,
+                    "graft down".to_owned(),
+                    Color::new(0.9, 0.5, 0.35, 1.0),
+                )
+            }
+            BattleEvent::GraftRejected { unit, .. } => {
+                let (x, y) = at(self, *unit);
+                (
+                    x,
+                    y,
+                    "REJECTED".to_owned(),
+                    Color::new(0.95, 0.3, 0.25, 1.0),
+                )
+            }
+            BattleEvent::BerserkStarted { unit } => {
+                let (x, y) = at(self, *unit);
+                (x, y, "BERSERK".to_owned(), Color::new(0.98, 0.35, 0.2, 1.0))
+            }
+            BattleEvent::Healed { target, amount, .. } => {
+                let (x, y) = at(self, *target);
+                (
+                    x,
+                    y,
+                    format!("+{:.0}", amount),
+                    Color::new(0.5, 0.85, 0.5, 1.0),
+                )
+            }
+            BattleEvent::Shielded { unit, .. } => {
+                let (x, y) = at(self, *unit);
+                (x, y, "shield".to_owned(), Color::new(0.5, 0.75, 0.95, 1.0))
+            }
+            BattleEvent::CoreExposed { unit } => {
+                let (x, y) = at(self, *unit);
+                (x, y, "EXPOSED".to_owned(), Color::new(1.0, 0.9, 0.5, 1.0))
+            }
+            BattleEvent::CoreCracked { unit } => {
+                let (x, y) = at(self, *unit);
+                (x, y, "CRACKED".to_owned(), Color::new(1.0, 0.95, 0.7, 1.0))
+            }
+            _ => return,
+        };
+        // Cap concurrent floats so a flurry can't clutter the field.
+        if self.floats.len() > 24 {
+            self.floats.remove(0);
+        }
+        self.floats.push(FloatText {
+            x,
+            y,
+            text,
+            color,
+            age: 0.0,
+            ttl: 0.9,
+        });
     }
 
     fn update_outcome(&mut self) -> BattleScreenResult {
@@ -100,12 +224,22 @@ impl BattleScreen {
             self.wait_pause = false;
         }
 
-        // Target cycling.
-        if is_key_pressed(KeyCode::Up) || is_key_pressed(KeyCode::Down) {
+        // Aim mode: [C] toggles; while aiming, arrows are called-shot region
+        // selection and movement is suspended (`combat.md` §3.1).
+        if is_key_pressed(KeyCode::C) {
+            self.aim = !self.aim;
+            if self.aim && self.pace == PaceSetting::Wait {
+                self.wait_pause = true; // lining up a shot is thinking time
+            }
+        }
+        // Target cycling (Tab always; Up/Down when not aiming).
+        let cycle_fwd = is_key_pressed(KeyCode::Tab) || (!self.aim && is_key_pressed(KeyCode::Up));
+        let cycle_back = !self.aim && is_key_pressed(KeyCode::Down);
+        if cycle_fwd || cycle_back {
             let enemies = self.battle.alive_on(Side::Enemy);
             if !enemies.is_empty() {
                 let cur = enemies.iter().position(|&e| e == self.target).unwrap_or(0);
-                let next = if is_key_pressed(KeyCode::Up) {
+                let next = if cycle_fwd {
                     (cur + 1) % enemies.len()
                 } else {
                     (cur + enemies.len() - 1) % enemies.len()
@@ -114,22 +248,43 @@ impl BattleScreen {
                 self.called = None;
             }
             if self.pace == PaceSetting::Wait {
-                self.wait_pause = true; // targeting is thinking time
+                self.wait_pause = true;
             }
         }
-        if is_key_pressed(KeyCode::C) {
-            self.cycle_called();
-        }
 
-        // Ridden movement.
-        let intent = if is_key_down(KeyCode::Left) {
-            -1.0
-        } else if is_key_down(KeyCode::Right) {
-            1.0
+        if self.aim {
+            // Arrows pick the limb region on the target's sprite.
+            let region_dir = if is_key_pressed(KeyCode::Up) {
+                Some([LimbRegion::Head, LimbRegion::Back].as_slice())
+            } else if is_key_pressed(KeyCode::Down) {
+                Some([LimbRegion::Legs, LimbRegion::Tail].as_slice())
+            } else if is_key_pressed(KeyCode::Left) {
+                Some([LimbRegion::ArmLeft].as_slice())
+            } else if is_key_pressed(KeyCode::Right) {
+                Some([LimbRegion::ArmRight].as_slice())
+            } else {
+                None
+            };
+            if let Some(regions) = region_dir {
+                self.called = self.called_in_regions(data, regions);
+                if self.pace == PaceSetting::Wait {
+                    self.wait_pause = true;
+                }
+            }
+            if is_key_pressed(KeyCode::X) {
+                self.called = None; // back to center mass
+            }
         } else {
-            0.0
-        };
-        let _ = self.battle.command(data, PlayerCommand::Move { intent });
+            // Ridden movement (only outside aim mode).
+            let intent = if is_key_down(KeyCode::Left) {
+                -1.0
+            } else if is_key_down(KeyCode::Right) {
+                1.0
+            } else {
+                0.0
+            };
+            let _ = self.battle.command(data, PlayerCommand::Move { intent });
+        }
 
         // Weapons: Q/W/E/R fire the ridden creature's weapon mounts in order.
         let weapon_keys = [KeyCode::Q, KeyCode::W, KeyCode::E, KeyCode::R];
@@ -199,34 +354,26 @@ impl BattleScreen {
         }
     }
 
-    fn cycle_called(&mut self) {
-        let Some(target) = self.battle.units.get(self.target) else {
-            return;
+    /// Picks a called-shot target in one of the given sprite regions: prefer
+    /// a still-usable weapon/graft mount there (surgery), else the bare limb.
+    fn called_in_regions(&self, data: &GameData, regions: &[LimbRegion]) -> Option<CalledTarget> {
+        let target = self.battle.units.get(self.target)?;
+        let in_region = |limb_index: usize| {
+            let region = target.limb_def(data, &target.limbs[limb_index]).region;
+            regions.contains(&region)
         };
-        // None → each usable mount → each intact limb → None.
-        let mounts: Vec<usize> = target
-            .mounts
-            .iter()
-            .enumerate()
-            .filter(|(_, m)| m.usable() && target.limbs[m.limb_index].intact())
-            .map(|(i, _)| i)
-            .collect();
-        let limbs = target.intact_limbs();
-        let seq: Vec<CalledTarget> = mounts
+        // A live mount on a limb in-region is the most valuable pick.
+        if let Some(mi) = target.mounts.iter().position(|m| {
+            m.usable() && target.limbs[m.limb_index].intact() && in_region(m.limb_index)
+        }) {
+            return Some(CalledTarget::Mount(mi));
+        }
+        // Otherwise sever an intact limb in-region.
+        target
+            .intact_limbs()
             .into_iter()
-            .map(CalledTarget::Mount)
-            .chain(limbs.into_iter().map(CalledTarget::Limb))
-            .collect();
-        self.called = match self.called {
-            None => seq.first().copied(),
-            Some(cur) => {
-                let idx = seq.iter().position(|&c| c == cur);
-                match idx {
-                    Some(i) if i + 1 < seq.len() => Some(seq[i + 1]),
-                    _ => None,
-                }
-            }
-        };
+            .find(|&li| in_region(li))
+            .map(CalledTarget::Limb)
     }
 
     fn trigger_first_utility(&mut self, data: &GameData) {
@@ -278,12 +425,100 @@ impl BattleScreen {
         for (id, _) in self.battle.units.iter().enumerate() {
             self.draw_unit(data, id);
         }
+        if self.aim {
+            self.draw_aim_overlay(data);
+        }
+        self.draw_floats();
         self.draw_hud(data);
         self.draw_log();
         if self.battle.over() {
             self.draw_outcome(data);
         } else if self.paused() {
             self.draw_pause_banner();
+        }
+    }
+
+    /// Directional called-shot overlay on the current target: chevrons around
+    /// the sprite mapped to limb regions, the chosen one lit (`combat.md` §3.1).
+    fn draw_aim_overlay(&self, data: &GameData) {
+        let Some(target) = self.battle.units.get(self.target) else {
+            return;
+        };
+        if target.downed {
+            return;
+        }
+        let x = self.world_to_screen(target.pos, data);
+        let r = self.size_radius(data, self.target);
+        let y = GROUND_Y - r;
+
+        // Which region is currently selected, for highlighting.
+        let sel_region = match self.called {
+            Some(CalledTarget::Mount(mi)) => target
+                .mounts
+                .get(mi)
+                .map(|m| target.limb_def(data, &target.limbs[m.limb_index]).region),
+            Some(CalledTarget::Limb(li)) => target
+                .limbs
+                .get(li)
+                .map(|l| target.limb_def(data, l).region),
+            None => None,
+        };
+        let regs = [
+            (LimbRegion::Head, 0.0, -1.0, "▲ head/back"),
+            (LimbRegion::Legs, 0.0, 1.0, "▼ legs"),
+            (LimbRegion::ArmLeft, -1.0, 0.0, "◀ left"),
+            (LimbRegion::ArmRight, 1.0, 0.0, "▶ right"),
+        ];
+        let matches = |sel: Option<LimbRegion>, r: LimbRegion| match (sel, r) {
+            (Some(LimbRegion::Head), LimbRegion::Head)
+            | (Some(LimbRegion::Back), LimbRegion::Head) => true,
+            (Some(LimbRegion::Legs), LimbRegion::Legs)
+            | (Some(LimbRegion::Tail), LimbRegion::Legs) => true,
+            (Some(s), r) => s == r,
+            _ => false,
+        };
+        for (region, dx, dy, _label) in regs {
+            let lit = matches(sel_region, region);
+            let cx = x + dx * (r + 26.0);
+            let cy = y + dy * (r + 22.0);
+            let col = if lit {
+                Color::new(0.98, 0.45, 0.35, 1.0)
+            } else {
+                Color::new(0.6, 0.6, 0.65, 0.5)
+            };
+            draw_triangle(
+                vec2(cx + dx * 8.0, cy + dy * 8.0),
+                vec2(cx - dy * 6.0 - dx * 4.0, cy - dx * 6.0 - dy * 4.0),
+                vec2(cx + dy * 6.0 - dx * 4.0, cy + dx * 6.0 - dy * 4.0),
+                col,
+            );
+        }
+        draw_circle_lines(x, y, r + 14.0, 2.0, Color::new(0.98, 0.45, 0.35, 0.7));
+    }
+
+    fn draw_floats(&self) {
+        for f in &self.floats {
+            let t = (f.age / f.ttl).clamp(0.0, 1.0);
+            let alpha = (1.0 - t).clamp(0.0, 1.0);
+            let size = if f.text.chars().all(|c| c.is_ascii_digit() || c == '+') {
+                22.0
+            } else {
+                18.0
+            };
+            let col = Color::new(f.color.r, f.color.g, f.color.b, alpha);
+            // Cheap shadow for legibility over any backdrop.
+            draw_ui_text_ex(
+                &f.text,
+                f.x - f.text.len() as f32 * 3.0 + 1.0,
+                f.y + 1.0,
+                TextStyle::new(size, Color::new(0.0, 0.0, 0.0, alpha * 0.7)).params(),
+            );
+            draw_ui_text_ex(
+                &f.text,
+                f.x - f.text.len() as f32 * 3.0,
+                f.y,
+                TextStyle::new(size, col).params(),
+            );
         }
     }
 
@@ -419,10 +654,32 @@ impl BattleScreen {
                 body_color
             },
         );
-        // Big kawaii eye — even in dev-shapes the core should read as alive.
+        // Kawaii face: two big eyes, catch-lights, and a blush — the core is
+        // the precious thing you must protect on sight (`game_design.md` §10).
         if !u.downed {
-            draw_circle(x + core_r * 0.25, y - core_r * 0.2, core_r * 0.22, BLACK);
-            draw_circle(x + core_r * 0.30, y - core_r * 0.26, core_r * 0.08, WHITE);
+            let face = x + if u.side == Side::Player { -1.0 } else { 1.0 } * core_r * 0.12;
+            let eye_dx = core_r * 0.34;
+            let eye_y = y - core_r * 0.12;
+            let eye_r = core_r * 0.24;
+            for side in [-1.0, 1.0] {
+                let ex = face + side * eye_dx;
+                draw_circle(ex, eye_y, eye_r, Color::new(0.1, 0.1, 0.12, 1.0));
+                draw_circle(ex + eye_r * 0.3, eye_y - eye_r * 0.35, eye_r * 0.4, WHITE);
+                // Soft blush under each eye.
+                draw_circle(
+                    ex,
+                    eye_y + eye_r * 1.3,
+                    eye_r * 0.5,
+                    Color::new(0.95, 0.55, 0.55, 0.35),
+                );
+            }
+            // Tiny mouth.
+            draw_circle(
+                face,
+                y + core_r * 0.42,
+                core_r * 0.07,
+                Color::new(0.4, 0.2, 0.22, 0.9),
+            );
         }
 
         // Shield ring.
@@ -564,11 +821,24 @@ impl BattleScreen {
                 );
                 y += 20.0;
             }
+            let hint = if self.aim {
+                "AIMING — arrows pick a limb · Q/W/E/R fire · [X] center · [C] release · [Tab] switch foe"
+            } else {
+                "[A] bite  [S] utility  [D] reinforce  [G] regrow  [H] hop  [C] aim  [1-6] stance"
+            };
             draw_ui_text_ex(
-                "[A] bite  [S] utility  [D] reinforce  [G] regrow  [H] hop  [C] aim  [1-6] stance",
+                hint,
                 18.0,
                 y + 6.0,
-                TextStyle::new(14.0, dark::TEXT_DIM).params(),
+                TextStyle::new(
+                    14.0,
+                    if self.aim {
+                        Color::new(0.98, 0.55, 0.4, 1.0)
+                    } else {
+                        dark::TEXT_DIM
+                    },
+                )
+                .params(),
             );
         }
 

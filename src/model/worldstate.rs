@@ -16,6 +16,16 @@ pub enum Verdict {
     Bind,
 }
 
+impl Verdict {
+    pub fn display_name(self) -> &'static str {
+        match self {
+            Verdict::Purge => "Purged",
+            Verdict::Reseed => "Reseeded",
+            Verdict::Bind => "Bound",
+        }
+    }
+}
+
 /// How a region currently reads, derived from its factory's state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RegionMood {
@@ -29,6 +39,18 @@ pub enum RegionMood {
     Claimed,
     /// A reseeded region that slid back — someone is grafting again (§9.1).
     Relapsed,
+}
+
+impl RegionMood {
+    pub fn display_name(self) -> &'static str {
+        match self {
+            RegionMood::Threatened => "Threatened",
+            RegionMood::Dead => "Dead",
+            RegionMood::Reviving => "Reviving",
+            RegionMood::Claimed => "Claimed",
+            RegionMood::Relapsed => "Relapsed",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -94,6 +116,36 @@ impl WorldState {
     /// Factory floors go dormant once any verdict is passed — the vats stop.
     pub fn factory_active(&self, id: &str) -> bool {
         self.verdict(id).is_none()
+    }
+
+    /// How many of the world's Gestaria have received a verdict.
+    pub fn verdicts_passed(&self, data: &GameData) -> usize {
+        data.factories
+            .iter()
+            .filter(|(id, _)| self.verdict(id).is_some())
+            .count()
+    }
+
+    /// True once every Gestarium in the world has been judged — the endgame
+    /// condition (`game_design.md` §9.2).
+    pub fn all_judged(&self, data: &GameData) -> bool {
+        !data.factories.is_empty() && self.verdicts_passed(data) == data.factories.len()
+    }
+
+    /// Tally of verdicts by kind, for the closing reflection.
+    pub fn verdict_tally(&self, data: &GameData) -> (usize, usize, usize) {
+        let mut purge = 0;
+        let mut reseed = 0;
+        let mut bind = 0;
+        for (id, _) in data.factories.iter() {
+            match self.verdict(id) {
+                Some(Verdict::Purge) => purge += 1,
+                Some(Verdict::Reseed) => reseed += 1,
+                Some(Verdict::Bind) => bind += 1,
+                None => {}
+            }
+        }
+        (purge, reseed, bind)
     }
 
     /// Advances relapse pressure by one overworld step (§9.1: revive-and-

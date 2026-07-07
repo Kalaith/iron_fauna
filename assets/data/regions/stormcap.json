@@ -1,1 +1,733 @@
-{ "maps": [], "settlements": [], "factories": [] }
+{
+  "maps": [
+    {
+      "id": "spire_ascent",
+      "name": "Spire Ascent",
+      "region": "stormcap",
+      "rows": [
+        "################..################",
+        "#................................#",
+        "#....^^^...ggg......ggg.^^^......#",
+        "#....^^^...ggg......ggg.^^^......#",
+        "#................................#",
+        "#..,,,,,,,,,,,,,,,,,,,,,,,,,,,,..#",
+        "#..,..........................,..#",
+        "#..,................^^^.......,..#",
+        "#..,..^^^...........^^^.......,...",
+        "#..,..^^^ggg............ggg...,...",
+        "#..,.....ggg............ggg...,..#",
+        "#..,..........................,..#",
+        "#..,,,,,,,,,,,,,,,,,,,,,,,,,,,,..#",
+        "#................................#",
+        "#....^^^....ggg....ggg..^^^......#",
+        "#....^^^....ggg....ggg..^^^......#",
+        "#................................#",
+        "##################################"
+      ],
+      "spawn_x": 16,
+      "spawn_y": 3,
+      "encounter_rate": 0.12,
+      "encounters": [
+        {
+          "species": "joltole",
+          "weight": 4,
+          "max": 2
+        },
+        {
+          "species": "kestrelle",
+          "weight": 3
+        },
+        {
+          "species": "cervolt",
+          "weight": 2
+        },
+        {
+          "species": "ferrobruin",
+          "weight": 1
+        }
+      ],
+      "warps": [
+        {
+          "x": 16,
+          "y": 0,
+          "to_map": "crossroads",
+          "to_x": 24,
+          "to_y": 1
+        },
+        {
+          "x": 17,
+          "y": 0,
+          "to_map": "crossroads",
+          "to_x": 25,
+          "to_y": 1
+        },
+        {
+          "x": 33,
+          "y": 8,
+          "to_map": "windward_hold",
+          "to_x": 1,
+          "to_y": 8
+        },
+        {
+          "x": 33,
+          "y": 9,
+          "to_map": "windward_hold",
+          "to_x": 1,
+          "to_y": 9
+        }
+      ],
+      "npcs": [
+        {
+          "id": "herder_bram",
+          "x": 20,
+          "y": 6,
+          "name": "Herder Bram",
+          "dialogue": [
+            {
+              "lines": [
+                "Watch the sky, not your feet. Storm-born don't announce themselves.",
+                "You're the one they say means to climb to the Spire itself. Braver than sense. We like that up here, mostly."
+              ],
+              "set_flags": [
+                "stormcap_met"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "windward_hold",
+      "name": "Windward Hold",
+      "region": "stormcap",
+      "rows": [
+        "##################################",
+        "#................................#",
+        "#....####.....####.....####......#",
+        "#....####.....####.....####......#",
+        "#.....,.................,........#",
+        "#.....,.................,........#",
+        "#.....,,................,.....,...",
+        "#.....,.................,.....,...",
+        "......,.................,.....,..#",
+        "..,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.#",
+        "#................................#",
+        "#.........^^^.......^^^..........#",
+        "#.........^^^.......^^^..........#",
+        "##################################"
+      ],
+      "spawn_x": 3,
+      "spawn_y": 8,
+      "warps": [
+        {
+          "x": 0,
+          "y": 8,
+          "to_map": "spire_ascent",
+          "to_x": 31,
+          "to_y": 8
+        },
+        {
+          "x": 0,
+          "y": 9,
+          "to_map": "spire_ascent",
+          "to_x": 31,
+          "to_y": 9
+        },
+        {
+          "x": 33,
+          "y": 6,
+          "to_map": "storm_shelf",
+          "to_x": 1,
+          "to_y": 6
+        },
+        {
+          "x": 33,
+          "y": 7,
+          "to_map": "storm_shelf",
+          "to_x": 1,
+          "to_y": 7
+        }
+      ],
+      "npcs": [
+        {
+          "id": "warden_teklan",
+          "x": 15,
+          "y": 7,
+          "name": "Warden Teklan",
+          "dialogue": [
+            {
+              "lines": [
+                "It's grinding again up there. Someone we fed and sheltered decided the old sparks were worth another try. Go end it."
+              ],
+              "when": {
+                "relapsed": [
+                  "the_spire",
+                  true
+                ]
+              }
+            },
+            {
+              "lines": [
+                "The Spire's quiet. First silence in living memory. My knees ache with the missing thunder."
+              ],
+              "when": {
+                "verdict": [
+                  "the_spire",
+                  "Purge"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "Green on the terraces. Green! And every herder eyeing that live machine like it owes them a warmer winter."
+              ],
+              "when": {
+                "verdict": [
+                  "the_spire",
+                  "Reseed"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "You keep the Spire now. The storms answer a hand again. Whose, though \u2014 that's the part that keeps me up."
+              ],
+              "when": {
+                "verdict": [
+                  "the_spire",
+                  "Bind"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "You climbed all this way \u2014 take this off my wall. Pulled it from a storm-unit that cost me two good herders. It should ride with someone going up."
+              ],
+              "when": {
+                "flags_none": [
+                  "stormcap_gift"
+                ]
+              },
+              "set_flags": [
+                "stormcap_gift"
+              ],
+              "give_grafts": [
+                "arc_whip"
+              ]
+            },
+            {
+              "lines": [
+                "Windward Hold has held the ridge since before the maps. We thin what the Spire throws down, and we bury our own quiet."
+              ],
+              "set_flags": [
+                "stormcap_warden"
+              ]
+            }
+          ]
+        }
+      ],
+      "settlement": "windward_hold"
+    },
+    {
+      "id": "storm_shelf",
+      "name": "Storm Shelf",
+      "region": "stormcap",
+      "rows": [
+        "##################################",
+        "#................................#",
+        "#....^^^................^^^......#",
+        "#....^^^......####......^^^......#",
+        "#.............####...............#",
+        "#..............DD................#",
+        "...............,,................#",
+        "...............,.................#",
+        "#..,,,,,,,,,,,,,,,,,,,,,,,,,,,,..#",
+        "#................................#",
+        "#.....ggg.............ggg........#",
+        "#....^ggg.............ggg^^......#",
+        "#....^^^................^^^......#",
+        "#.........ggg.......ggg..........#",
+        "#.........ggg.......ggg..........#",
+        "##################################"
+      ],
+      "spawn_x": 2,
+      "spawn_y": 6,
+      "encounter_rate": 0.13,
+      "encounters": [
+        {
+          "species": "cervolt",
+          "weight": 3
+        },
+        {
+          "species": "cragdor",
+          "weight": 2
+        },
+        {
+          "species": "eeluma",
+          "weight": 2
+        },
+        {
+          "species": "joltole",
+          "weight": 3,
+          "max": 2
+        }
+      ],
+      "warps": [
+        {
+          "x": 0,
+          "y": 6,
+          "to_map": "windward_hold",
+          "to_x": 31,
+          "to_y": 6
+        },
+        {
+          "x": 0,
+          "y": 7,
+          "to_map": "windward_hold",
+          "to_x": 31,
+          "to_y": 7
+        },
+        {
+          "x": 15,
+          "y": 5,
+          "to_map": "spire_f1",
+          "to_x": 14,
+          "to_y": 13
+        },
+        {
+          "x": 16,
+          "y": 5,
+          "to_map": "spire_f1",
+          "to_x": 15,
+          "to_y": 13
+        }
+      ],
+      "npcs": [
+        {
+          "id": "climber_isolde",
+          "x": 24,
+          "y": 7,
+          "name": "Climber Isolde",
+          "dialogue": [
+            {
+              "lines": [
+                "The shelf's crawling with grafted things again \u2014 and these ones weren't born up there, they were MADE. By us. By what we brought back."
+              ],
+              "when": {
+                "relapsed": [
+                  "the_spire",
+                  true
+                ]
+              }
+            },
+            {
+              "lines": [
+                "The doors are cold now. I put my palm on them just to be sure. Cold as a settled grave."
+              ],
+              "when": {
+                "verdict": [
+                  "the_spire",
+                  "Purge"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "The doors breathe warm and slow. Like something sleeping that could wake. I don't sleep near them anymore."
+              ],
+              "when": {
+                "verdict": [
+                  "the_spire",
+                  "Reseed"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "Your doors now. You open them and things walk out that answer to you. I've stopped asking what."
+              ],
+              "when": {
+                "verdict": [
+                  "the_spire",
+                  "Bind"
+                ]
+              }
+            },
+            {
+              "lines": [
+                "Everything the Spire births comes down this shelf. I count them so the Hold knows what's coming. Lately I've had time to count clouds too."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "settlements": [
+    {
+      "id": "windward_hold",
+      "name": "Windward Hold",
+      "region": "stormcap",
+      "description": "Terraced stone lashed to the mountain's shoulder, roofed against a sky that never fully calms. They herd storm-cores here and pretend the thunder is weather.",
+      "shop": [
+        {
+          "graft": "static_barb"
+        },
+        {
+          "graft": "spark_coil"
+        },
+        {
+          "graft": "cinder_flick"
+        },
+        {
+          "graft": "bone_lattice"
+        },
+        {
+          "graft": "cooling_gill"
+        },
+        {
+          "graft": "glow_bulb"
+        },
+        {
+          "graft": "arc_whip"
+        },
+        {
+          "graft": "marrow_battery"
+        }
+      ],
+      "duelists": [
+        {
+          "id": "herder_pike",
+          "name": "Herder Pike",
+          "blurb": "Duels between shifts, still smelling of wet wool. Rides a jolt-kit that bites first.",
+          "rank_req": 0,
+          "practice": true,
+          "reward_scrip": 30,
+          "party": [
+            {
+              "species": "joltole",
+              "name": "Pike's Spark",
+              "grafts": [
+                {
+                  "limb": "forepaw_l",
+                  "slot": 0,
+                  "graft": "static_barb"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cadet_ren",
+          "name": "Storm-Cadet Ren",
+          "blurb": "Teklan's best. Fights like the wind's watching and grading.",
+          "rank_req": 1,
+          "practice": true,
+          "reward_scrip": 55,
+          "party": [
+            {
+              "species": "cervolt",
+              "name": "Ren's Antler",
+              "grafts": [
+                {
+                  "limb": "antler_crown",
+                  "slot": 0,
+                  "graft": "arc_whip"
+                },
+                {
+                  "limb": "back",
+                  "slot": 0,
+                  "graft": "basalt_carapace"
+                }
+              ]
+            },
+            {
+              "species": "joltole",
+              "name": "Ren's Kit",
+              "grafts": [
+                {
+                  "limb": "forepaw_l",
+                  "slot": 0,
+                  "graft": "spark_coil"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tinker_vosk",
+          "name": "Tinker Vosk",
+          "blurb": "Wagers parts he can't grow himself. Hates the raiders who can.",
+          "rank_req": 1,
+          "practice": false,
+          "reward_scrip": 60,
+          "stake": "arc_whip",
+          "min_stake_value": 80,
+          "party": [
+            {
+              "species": "cragdor",
+              "name": "Vosk's Kite",
+              "grafts": [
+                {
+                  "limb": "harness",
+                  "slot": 0,
+                  "graft": "spark_coil"
+                },
+                {
+                  "limb": "harness",
+                  "slot": 1,
+                  "graft": "cooling_gill"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "warden_teklan_duel",
+          "name": "Warden Teklan",
+          "blurb": "The ring's keeper. Only fights climbers who've bested his cadets, and stakes mountain iron.",
+          "rank_req": 2,
+          "practice": false,
+          "reward_scrip": 130,
+          "stake": "storm_lung",
+          "min_stake_value": 200,
+          "party": [
+            {
+              "species": "eeluma",
+              "name": "Teklan's Current",
+              "grafts": [
+                {
+                  "limb": "dorsal_ridge",
+                  "slot": 0,
+                  "graft": "storm_lung"
+                },
+                {
+                  "limb": "fin_l",
+                  "slot": 0,
+                  "graft": "arc_whip"
+                },
+                {
+                  "limb": "tail",
+                  "slot": 0,
+                  "graft": "shield_membrane"
+                }
+              ]
+            },
+            {
+              "species": "cervolt",
+              "name": "Teklan's Guard",
+              "grafts": [
+                {
+                  "limb": "back",
+                  "slot": 0,
+                  "graft": "bolt_cannon"
+                },
+                {
+                  "limb": "foreleg_l",
+                  "slot": 0,
+                  "graft": "basalt_carapace"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "factories": [
+    {
+      "id": "the_spire",
+      "name": "The Spire",
+      "region": "stormcap",
+      "description": "A lightning-rod womb the height of the mountain it grew into. It gestates storm-touched cores and teaches them to hate the ground.",
+      "rider_upgrade": "Beastwhisper",
+      "grow_cost": 300,
+      "grows": [
+        "joltole",
+        "cervolt",
+        "cragdor",
+        "eeluma",
+        "kestrelle"
+      ],
+      "floors": [
+        {
+          "id": "spire_f1",
+          "name": "The Spire \u2014 Static Halls",
+          "region": "stormcap",
+          "rows": [
+            "##############################",
+            "#============================#",
+            "#==VV=====VV======VV====VV===#",
+            "#==VV=====VV======VV====VV===#",
+            "#=======vvv=====vvv==========#",
+            "#============================#",
+            "#=====VV============VV=======#",
+            "#D====VV============VV=======#",
+            "#============================#",
+            "#===========vvv=====vvv======#",
+            "#===VV================VV=====#",
+            "#===VV================VV=====#",
+            "#=========vvv=====vvv========#",
+            "#============================#",
+            "#============================#",
+            "##############DD##############"
+          ],
+          "spawn_x": 14,
+          "spawn_y": 13,
+          "encounter_rate": 0.2,
+          "encounters": [
+            {
+              "species": "joltole",
+              "weight": 3,
+              "max": 2
+            },
+            {
+              "species": "cervolt",
+              "weight": 3
+            },
+            {
+              "species": "kestrelle",
+              "weight": 2
+            },
+            {
+              "species": "cragdor",
+              "weight": 2
+            }
+          ],
+          "warps": [
+            {
+              "x": 14,
+              "y": 15,
+              "to_map": "storm_shelf",
+              "to_x": 15,
+              "to_y": 6
+            },
+            {
+              "x": 15,
+              "y": 15,
+              "to_map": "storm_shelf",
+              "to_x": 16,
+              "to_y": 6
+            },
+            {
+              "x": 1,
+              "y": 7,
+              "to_map": "spire_f2",
+              "to_x": 13,
+              "to_y": 11
+            }
+          ]
+        },
+        {
+          "id": "spire_f2",
+          "name": "The Spire \u2014 The Eye",
+          "region": "stormcap",
+          "rows": [
+            "############################",
+            "#==========================#",
+            "#==VV=================VV===#",
+            "#==VV===vvv=======vvv=VV===#",
+            "#==========================#",
+            "#============HH============#",
+            "#==========================#",
+            "#==========================#",
+            "#==========================#",
+            "#==VV=================VV===#",
+            "#==VV===vvv=======vvv=VV===#",
+            "#==========================#",
+            "#==========================#",
+            "#############DD#############"
+          ],
+          "spawn_x": 13,
+          "spawn_y": 11,
+          "encounter_rate": 0.14,
+          "encounters": [
+            {
+              "species": "cervolt",
+              "weight": 3
+            },
+            {
+              "species": "eeluma",
+              "weight": 2
+            },
+            {
+              "species": "cragdor",
+              "weight": 2
+            }
+          ],
+          "warps": [
+            {
+              "x": 13,
+              "y": 13,
+              "to_map": "spire_f1",
+              "to_x": 2,
+              "to_y": 7
+            },
+            {
+              "x": 14,
+              "y": 13,
+              "to_map": "spire_f1",
+              "to_x": 2,
+              "to_y": 7
+            }
+          ]
+        }
+      ],
+      "heart_guard": [
+        {
+          "species": "fulgurr",
+          "name": "Spire-Warden",
+          "grafts": [
+            {
+              "limb": "storm_mane",
+              "slot": 0,
+              "graft": "storm_lung"
+            },
+            {
+              "limb": "forepaw_l",
+              "slot": 0,
+              "graft": "arc_whip"
+            },
+            {
+              "limb": "forepaw_r",
+              "slot": 0,
+              "graft": "basalt_carapace"
+            },
+            {
+              "limb": "haunches",
+              "slot": 0,
+              "graft": "shield_membrane"
+            }
+          ]
+        },
+        {
+          "species": "cervolt",
+          "name": "Eye-Watch Alpha",
+          "grafts": [
+            {
+              "limb": "back",
+              "slot": 0,
+              "graft": "bolt_cannon"
+            },
+            {
+              "limb": "antler_crown",
+              "slot": 0,
+              "graft": "arc_whip"
+            }
+          ]
+        },
+        {
+          "species": "joltole",
+          "name": "Eye-Watch Mote",
+          "grafts": [
+            {
+              "limb": "forepaw_l",
+              "slot": 0,
+              "graft": "static_barb"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
