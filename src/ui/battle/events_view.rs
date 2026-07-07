@@ -99,6 +99,7 @@ pub(super) fn describe_event(
         BattleEvent::Shielded { unit, amount } => {
             format!("{}'s core is shielded (+{:.0})", name(unit), amount)
         }
+        BattleEvent::ItemUsed { unit, label } => format!("{} — {}", name(unit), label),
         BattleEvent::StanceChanged { unit } => format!(
             "{} switches to {}",
             name(unit),

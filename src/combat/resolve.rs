@@ -20,6 +20,8 @@ pub fn apply(session: &mut GameSession, data: &GameData, battle: &Battle) -> Res
         return summary;
     };
     session.battles_fought += 1;
+    // Consumables spent in the fight (potions, loaded ammo) are gone for good.
+    session.profile.inventory.consumables = battle.bag.clone();
 
     // Player graftware that was destroyed or detached in the fight comes home
     // Damaged — repairable at a settlement, never free (`game_design.md` §4.4).

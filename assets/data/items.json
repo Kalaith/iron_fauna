@@ -1,0 +1,51 @@
+[
+  {
+    "id": "mend_salve",
+    "name": "Mend Salve",
+    "description": "A graft-cultured poultice. Knits a wounded limb back together mid-fight.",
+    "effect": { "type": "mend_limb", "amount": 45 },
+    "value": 40
+  },
+  {
+    "id": "vigor_draught",
+    "name": "Vigor Draught",
+    "description": "Bitter, electric. Floods the core with a burst of Vigor.",
+    "effect": { "type": "restore_vigor", "amount": 45 },
+    "value": 45
+  },
+  {
+    "id": "calm_tonic",
+    "name": "Calm Tonic",
+    "description": "Steadies a war-body on the edge of berserk — vents Strain fast.",
+    "effect": { "type": "vent_strain", "amount": 35 },
+    "value": 40
+  },
+  {
+    "id": "ward_gel",
+    "name": "Ward Gel",
+    "description": "Hardens over the core for a moment, soaking the next hits.",
+    "effect": { "type": "shield_core", "amount": 30 },
+    "value": 50
+  },
+  {
+    "id": "repair_kit",
+    "name": "Field Repair Kit",
+    "description": "Clamps, solder, spare tissue. Fixes one damaged graft on the road.",
+    "effect": { "type": "field_repair" },
+    "value": 60
+  },
+  {
+    "id": "incendiary_rounds",
+    "name": "Incendiary Rounds",
+    "description": "A magazine that sets what it hits alight — extra bite, lingering burn.",
+    "effect": { "type": "ammo", "magazine": 4, "damage_mult": 1.15, "burn_dps": 6.0, "burn_secs": 4.0 },
+    "value": 55
+  },
+  {
+    "id": "piercing_rounds",
+    "name": "Piercing Rounds",
+    "description": "Dense slugs that punch clean through plating for heavy damage.",
+    "effect": { "type": "ammo", "magazine": 4, "damage_mult": 1.5 },
+    "value": 55
+  }
+]

@@ -63,6 +63,11 @@ pub enum BattleEvent {
         unit: UnitId,
         amount: f32,
     },
+    /// A consumable was used on `unit` — `label` is the floating callout.
+    ItemUsed {
+        unit: UnitId,
+        label: String,
+    },
     StanceChanged {
         unit: UnitId,
     },

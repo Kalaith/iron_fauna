@@ -16,15 +16,19 @@ pub enum CodexTab {
     Status,
     Corelings,
     Party,
+    Items,
+    Equipment,
     Quests,
     Journal,
 }
 
 impl CodexTab {
-    pub const ALL: [CodexTab; 5] = [
+    pub const ALL: [CodexTab; 7] = [
         CodexTab::Status,
         CodexTab::Corelings,
         CodexTab::Party,
+        CodexTab::Items,
+        CodexTab::Equipment,
         CodexTab::Quests,
         CodexTab::Journal,
     ];
@@ -34,6 +38,8 @@ impl CodexTab {
             CodexTab::Status => "Status",
             CodexTab::Corelings => "Corelings",
             CodexTab::Party => "Party",
+            CodexTab::Items => "Items",
+            CodexTab::Equipment => "Equipment",
             CodexTab::Quests => "Quests",
             CodexTab::Journal => "Journal",
         }
@@ -49,6 +55,10 @@ pub enum CodexAction {
     MoveDown(u64),
     ToParty(u64),
     ToStorage(u64),
+    /// Open the grafting bench (settlement only).
+    OpenBench,
+    /// Spend a field-repair kit on the first damaged graft.
+    FieldRepair,
 }
 
 pub struct CodexScreen {
@@ -83,6 +93,8 @@ impl CodexScreen {
             KeyCode::Key3,
             KeyCode::Key4,
             KeyCode::Key5,
+            KeyCode::Key6,
+            KeyCode::Key7,
         ]
         .into_iter()
         .enumerate()
@@ -103,12 +115,17 @@ impl CodexScreen {
                 .with_border(1.0, Color::new(0.35, 0.4, 0.5, 0.6)),
         );
         let content = body.inset(22.0);
+        let at_settlement = self.return_settlement.is_some();
         match self.tab {
             CodexTab::Status => tabs::status(data, session, content),
             CodexTab::Corelings => {
                 tabs::corelings(self, data, session, content, mouse, &mut actions)
             }
             CodexTab::Party => tabs::party(data, session, content, mouse, &mut actions),
+            CodexTab::Items => tabs::items(data, session, content, mouse, &mut actions),
+            CodexTab::Equipment => {
+                tabs::equipment(data, session, content, at_settlement, mouse, &mut actions)
+            }
             CodexTab::Quests => tabs::quests(data, session, content),
             CodexTab::Journal => tabs::journal(data, session, content),
         }
@@ -123,12 +140,12 @@ impl CodexScreen {
             TextStyle::new(30.0, Color::new(0.88, 0.86, 0.80, 1.0)).params(),
         );
         draw_ui_text_ex(
-            "[Tab] / [Esc] close   ·   [1-5] jump",
+            "[Tab] / [Esc] close   ·   [1-7] jump",
             LOGICAL_WIDTH - 320.0,
             44.0,
             TextStyle::new(15.0, dark::TEXT_DIM).params(),
         );
-        let bw = 150.0;
+        let bw = 168.0;
         for (i, tab) in CodexTab::ALL.into_iter().enumerate() {
             let rect = Rect::new(28.0 + i as f32 * (bw + 8.0), 76.0, bw, 40.0);
             if tab == self.tab {

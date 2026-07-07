@@ -41,6 +41,13 @@ impl Game {
                     screen.force_aim_capture(&self.data);
                 }
             }
+            "battle_items" => {
+                self.return_to = ReturnTo::Menu;
+                self.start_dev_battle();
+                if let Mode::Battle(screen) = &mut self.mode {
+                    screen.force_item_capture();
+                }
+            }
             "battle_juice" => {
                 // Active pace so combat runs freely and floating text appears.
                 self.return_to = ReturnTo::Menu;
@@ -94,11 +101,15 @@ impl Game {
                 self.return_to = ReturnTo::Overworld;
                 self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
             }
-            "codex" => self.codex_scene(crate::ui::codex::CodexTab::Status),
-            "codex_corelings" => self.codex_scene(crate::ui::codex::CodexTab::Corelings),
-            "codex_party" => self.codex_scene(crate::ui::codex::CodexTab::Party),
-            "codex_quests" => self.codex_scene(crate::ui::codex::CodexTab::Quests),
-            "codex_journal" => self.codex_scene(crate::ui::codex::CodexTab::Journal),
+            "codex" => self.codex_scene(crate::ui::codex::CodexTab::Status, None),
+            "codex_corelings" => self.codex_scene(crate::ui::codex::CodexTab::Corelings, None),
+            "codex_party" => self.codex_scene(crate::ui::codex::CodexTab::Party, None),
+            "codex_items" => self.codex_scene(crate::ui::codex::CodexTab::Items, None),
+            "codex_equipment" => {
+                self.codex_scene(crate::ui::codex::CodexTab::Equipment, Some("fernhollow"))
+            }
+            "codex_quests" => self.codex_scene(crate::ui::codex::CodexTab::Quests, None),
+            "codex_journal" => self.codex_scene(crate::ui::codex::CodexTab::Journal, None),
             "bestiary" => {
                 // Seed a partial collection so the screen shows both states.
                 for sp in [
@@ -138,7 +149,7 @@ impl Game {
 
     /// Seeds a party, bounty, verdict, and chronicle, then opens the codex on
     /// the given tab so each tab has content to show.
-    fn codex_scene(&mut self, tab: crate::ui::codex::CodexTab) {
+    fn codex_scene(&mut self, tab: crate::ui::codex::CodexTab, settlement: Option<&str>) {
         for sp in ["weavil", "kestrelle", "pangol"] {
             self.session
                 .profile
@@ -152,7 +163,8 @@ impl Game {
         self.session.world_state.factory_mut("the_cradle").verdict = Some(Verdict::Reseed);
         crate::model::journal::record(&mut self.session, "Silenced the Cradle's heart.");
         crate::model::journal::record(&mut self.session, "Chose to reseed the meadow.");
-        let mut screen = crate::ui::codex::CodexScreen::new(&self.session, None);
+        let mut screen =
+            crate::ui::codex::CodexScreen::new(&self.session, settlement.map(str::to_owned));
         screen.tab = tab;
         self.mode = Mode::Codex(Box::new(screen));
     }

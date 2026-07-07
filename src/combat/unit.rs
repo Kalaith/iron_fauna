@@ -23,6 +23,15 @@ impl LimbState {
     }
 }
 
+/// A magazine of special ammunition loaded into a weapon mount.
+#[derive(Debug, Clone)]
+pub struct LoadedAmmo {
+    /// Consumable def id that was loaded (its stats drive the shot).
+    pub def_id: String,
+    /// Shots left before the weapon reverts to standard fire.
+    pub rounds: u32,
+}
+
 #[derive(Debug, Clone)]
 pub struct MountState {
     /// Index into the species' `limbs` list for the host limb.
@@ -37,6 +46,8 @@ pub struct MountState {
     /// Detached with a severed limb — recoverable as salvage, not destroyed.
     pub detached: bool,
     pub cooldown: f32,
+    /// Special ammunition loaded into this weapon (None = standard fire).
+    pub ammo: Option<LoadedAmmo>,
 }
 
 impl MountState {
@@ -163,6 +174,7 @@ impl BattleUnit {
                 destroyed: false,
                 detached: false,
                 cooldown: 0.0,
+                ammo: None,
             });
         }
 

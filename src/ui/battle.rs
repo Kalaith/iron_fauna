@@ -36,6 +36,8 @@ pub struct BattleScreen {
     called: Option<CalledTarget>,
     /// Aim mode: arrows pick the targeted limb region (`combat.md` §3.1).
     aim: bool,
+    /// Item mode: number keys use a potion or load ammunition.
+    item_mode: bool,
     log: Vec<String>,
     /// Rising, fading combat text spawned from battle events.
     floats: Vec<FloatText>,
@@ -63,6 +65,7 @@ impl BattleScreen {
             target,
             called: None,
             aim: false,
+            item_mode: false,
             log: vec!["The shells close in.".to_owned()],
             floats: Vec::new(),
             outcome_shown: false,
@@ -73,6 +76,12 @@ impl BattleScreen {
     pub fn force_aim_capture(&mut self, data: &GameData) {
         self.aim = true;
         self.called = self.called_in_regions(data, &[LimbRegion::ArmLeft]);
+        self.manual_pause = true;
+    }
+
+    /// Test/capture hook: open the item menu for a screenshot.
+    pub fn force_item_capture(&mut self) {
+        self.item_mode = true;
         self.manual_pause = true;
     }
 
@@ -199,6 +208,10 @@ impl BattleScreen {
                 let (x, y) = at(self, *unit);
                 (x, y, "CRACKED".to_owned(), Color::new(1.0, 0.95, 0.7, 1.0))
             }
+            BattleEvent::ItemUsed { unit, label } => {
+                let (x, y) = at(self, *unit);
+                (x, y, label.clone(), Color::new(0.65, 0.9, 0.7, 1.0))
+            }
             _ => return,
         };
         // Cap concurrent floats so a flurry can't clutter the field.
@@ -230,6 +243,26 @@ impl BattleScreen {
         if is_key_pressed(KeyCode::Space) && self.paused() {
             self.manual_pause = false;
             self.wait_pause = false;
+        }
+
+        // Item mode: [I] toggles; number keys use a potion or load ammo. It
+        // swallows the rest of the input so numbers don't also flip stances.
+        if is_key_pressed(KeyCode::I) {
+            self.item_mode = !self.item_mode;
+            if self.item_mode {
+                self.aim = false;
+                if self.pace == PaceSetting::Wait {
+                    self.wait_pause = true;
+                }
+            }
+        }
+        if self.item_mode {
+            if is_key_pressed(KeyCode::Escape) {
+                self.item_mode = false;
+            } else {
+                self.handle_item_keys(data);
+            }
+            return;
         }
 
         // Aim mode: [C] toggles; while aiming, arrows are called-shot region
@@ -362,6 +395,50 @@ impl BattleScreen {
         }
     }
 
+    /// In item mode, number keys pick from potions first, then ammo. Using a
+    /// potion is instant; loading ammo goes into the ridden unit's first weapon
+    /// (a reload that occupies it). Either resumes a Wait-paused clock.
+    fn handle_item_keys(&mut self, data: &GameData) {
+        let potions = self.battle.usable_potions(data);
+        let ammo = self.battle.usable_ammo(data);
+        let keys = [
+            KeyCode::Key1,
+            KeyCode::Key2,
+            KeyCode::Key3,
+            KeyCode::Key4,
+            KeyCode::Key5,
+            KeyCode::Key6,
+            KeyCode::Key7,
+            KeyCode::Key8,
+        ];
+        for (i, key) in keys.iter().enumerate() {
+            if !is_key_pressed(*key) {
+                continue;
+            }
+            let used = if i < potions.len() {
+                self.battle.use_potion(data, &potions[i].0.clone())
+            } else if let Some((def_id, _)) = ammo.get(i - potions.len()).cloned() {
+                self.load_first_weapon(data, &def_id)
+            } else {
+                false
+            };
+            if used {
+                self.wait_pause = false;
+                self.item_mode = false;
+            }
+        }
+    }
+
+    fn load_first_weapon(&mut self, data: &GameData, ammo_def: &str) -> bool {
+        let Some(id) = self.battle.ridden_unit() else {
+            return false;
+        };
+        let Some(&mount) = self.battle.units[id].weapon_mounts(data).first() else {
+            return false;
+        };
+        self.battle.load_ammo(data, mount, ammo_def)
+    }
+
     /// Picks a called-shot target in one of the given sprite regions: prefer
     /// a still-usable weapon/graft mount there (surgery), else the bare limb.
     fn called_in_regions(&self, data: &GameData, regions: &[LimbRegion]) -> Option<CalledTarget> {
@@ -438,6 +515,9 @@ impl BattleScreen {
         }
         self.draw_floats();
         self.draw_hud(data);
+        if self.item_mode {
+            self.draw_item_menu(data);
+        }
         self.draw_log();
         if self.battle.over() {
             self.draw_outcome(data);

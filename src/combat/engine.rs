@@ -20,6 +20,11 @@ pub struct Battle {
     /// Enemy graftware knocked loose so far (def ids).
     pub salvage: Vec<String>,
     pub rider_mods: RiderMods,
+    /// The rider's consumables for this fight — a snapshot of the inventory,
+    /// spent as potions/ammo are used and reconciled back afterwards.
+    pub bag: crate::model::inventory::ConsumableBag,
+    /// Shared cooldown gating potion use so a fight can't be won by spamming.
+    pub item_cooldown: f32,
     pub(crate) rng: Rng,
     pub(crate) ridden_ready_announced: bool,
 }
@@ -55,6 +60,8 @@ impl Battle {
             outcome: None,
             salvage: Vec::new(),
             rider_mods,
+            bag: Default::default(),
+            item_cooldown: 0.0,
             rng: Rng::new(seed),
             ridden_ready_announced: false,
         })
@@ -93,6 +100,7 @@ impl Battle {
             return;
         }
         self.time += dt;
+        self.item_cooldown = (self.item_cooldown - dt).max(0.0);
 
         self.update_hop(dt);
         for id in 0..self.units.len() {

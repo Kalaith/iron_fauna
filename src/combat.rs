@@ -8,6 +8,7 @@ pub mod actions;
 pub mod ai;
 pub mod engine;
 pub mod events;
+pub mod items;
 pub mod resolve;
 pub mod unit;
 

@@ -107,7 +107,7 @@ impl BattleScreen {
             let hint = if self.aim {
                 "AIMING — arrows pick a limb · Q/W/E/R fire · [X] center · [C] release · [Tab] switch foe"
             } else {
-                "[A] bite  [S] utility  [D] reinforce  [G] regrow  [H] hop  [C] aim  [1-6] stance"
+                "[A] bite  [S] utility  [D] reinforce  [G] regrow  [H] hop  [C] aim  [I] items  [1-6] stance"
             };
             draw_ui_text_ex(
                 hint,
@@ -154,6 +154,75 @@ impl BattleScreen {
                 LOGICAL_WIDTH - 420.0,
                 26.0,
                 TextStyle::new(16.0, Color::new(0.95, 0.75, 0.7, 1.0)).params(),
+            );
+        }
+    }
+
+    /// The in-combat item panel: potions then ammo, numbered for the keypad.
+    pub(super) fn draw_item_menu(&self, data: &GameData) {
+        let potions = self.battle.usable_potions(data);
+        let ammo = self.battle.usable_ammo(data);
+        let rows = (potions.len() + ammo.len()).max(1);
+        let rect = Rect::new(18.0, 300.0, 440.0, 58.0 + rows as f32 * 24.0);
+        draw_surface(
+            rect,
+            &SurfaceStyle::new(Color::new(0.06, 0.08, 0.07, 0.96))
+                .with_border(1.5, Color::new(0.45, 0.7, 0.5, 0.8)),
+        );
+        draw_ui_text_ex(
+            "ITEMS — press the number · [I]/[Esc] close",
+            rect.x + 14.0,
+            rect.y + 26.0,
+            TextStyle::new(16.0, Color::new(0.8, 0.92, 0.8, 1.0)).params(),
+        );
+        let mut y = rect.y + 52.0;
+        let mut n = 1;
+        if potions.is_empty() && ammo.is_empty() {
+            draw_ui_text_ex(
+                "The bag is empty.",
+                rect.x + 16.0,
+                y,
+                TextStyle::new(14.0, dark::TEXT_DIM).params(),
+            );
+            return;
+        }
+        let ready = self.battle.potion_ready();
+        for (def_id, count) in &potions {
+            let name = data
+                .items
+                .get(def_id)
+                .map(|d| d.name.as_str())
+                .unwrap_or("?");
+            draw_ui_text_ex(
+                &format!("[{}] {} ×{}   potion", n, name, count),
+                rect.x + 16.0,
+                y,
+                TextStyle::new(15.0, if ready { dark::TEXT } else { dark::TEXT_DIM }).params(),
+            );
+            y += 24.0;
+            n += 1;
+        }
+        for (def_id, count) in &ammo {
+            let name = data
+                .items
+                .get(def_id)
+                .map(|d| d.name.as_str())
+                .unwrap_or("?");
+            draw_ui_text_ex(
+                &format!("[{}] {} ×{}   load weapon (takes a turn)", n, name, count),
+                rect.x + 16.0,
+                y,
+                TextStyle::new(15.0, Color::new(0.85, 0.75, 0.55, 1.0)).params(),
+            );
+            y += 24.0;
+            n += 1;
+        }
+        if !ready {
+            draw_ui_text_ex(
+                "(potions catching their breath…)",
+                rect.x + 16.0,
+                y,
+                TextStyle::new(12.0, dark::TEXT_DIM).params(),
             );
         }
     }

@@ -334,7 +334,10 @@ impl Game {
             1000 + self.session.battles_fought as u64 * 7919 + self.session.steps.wrapping_mul(31);
         let rider_mods = RiderMods::from_rider(&self.session.profile.rider);
         match Battle::new(&self.data, context, &player, &enemy, rider_mods, seed) {
-            Ok(battle) => {
+            Ok(mut battle) => {
+                // The rider carries their consumables into the fight; whatever
+                // survives is written back in `resolve::apply`.
+                battle.bag = self.session.profile.inventory.consumables.clone();
                 self.mode = Mode::Battle(Box::new(BattleScreen::new(battle, self.session.pace)));
             }
             Err(err) => self

@@ -248,7 +248,36 @@ impl Game {
                     self.session.profile.roster.remove_from_party(id);
                 }
             }
+            CodexAction::OpenBench => {
+                // Only offered from a settlement; return there afterwards.
+                if let Some(id) = screen.return_settlement.take() {
+                    self.return_to = ReturnTo::Settlement(id);
+                    self.mode = Mode::Outfit(OutfitScreen {
+                        selected: self.session.profile.roster.party.first().copied(),
+                        selected_slot: None,
+                    });
+                }
+            }
+            CodexAction::FieldRepair => self.field_repair(),
         }
+    }
+
+    /// Spend one repair kit to mend the first damaged graft — the road's minor
+    /// maintenance (`game_design.md` §4.4).
+    fn field_repair(&mut self) {
+        let inv = &mut self.session.profile.inventory;
+        let Some(item_id) = inv.items.iter().find(|i| !i.is_usable()).map(|i| i.id) else {
+            self.notifications.info("Nothing needs mending.");
+            return;
+        };
+        if !inv.take_consumable("repair_kit") {
+            self.notifications.warning("No repair kits left");
+            return;
+        }
+        if let Some(item) = inv.item_mut(item_id) {
+            item.condition = crate::model::inventory::GraftCondition::Intact;
+        }
+        self.notifications.success("Field-patched a graft");
     }
 
     pub(super) fn apply_verdict_action(&mut self, action: VerdictAction) {

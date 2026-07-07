@@ -2,8 +2,10 @@
 
 use crate::combat::engine::Battle;
 use crate::combat::events::BattleEvent;
+use crate::combat::unit::Dot;
 use crate::combat::{CalledTarget, PlayerCommand, Side, UnitId, WeaponRef};
 use crate::data::graftware::{BoostEffect, GraftEffect, RangeBand};
+use crate::data::item::ConsumableEffect;
 use crate::data::GameData;
 
 impl Battle {
@@ -214,7 +216,7 @@ impl Battle {
         }
     }
 
-    fn heal_unit(&mut self, id: UnitId, amount: f32) {
+    pub(crate) fn heal_unit(&mut self, id: UnitId, amount: f32) {
         let u = &mut self.units[id];
         // Heal the most-wounded intact limb; overflow soothes the core.
         let target = u
@@ -230,6 +232,38 @@ impl Battle {
             limb.hp = (limb.hp + amount).min(limb.max_hp);
         } else {
             u.core_hp = (u.core_hp + amount * 0.5).min(u.core_max);
+        }
+    }
+
+    /// The damage multiplier and optional burn from the ammo loaded in a
+    /// weapon (`(1.0, None)` for natural attacks or standard fire).
+    fn ammo_effect(
+        &self,
+        data: &GameData,
+        attacker: UnitId,
+        weapon: WeaponRef,
+    ) -> (f32, Option<(f32, f32)>) {
+        let WeaponRef::Mount(m) = weapon else {
+            return (1.0, None);
+        };
+        let Some(ammo) = self.units[attacker]
+            .mounts
+            .get(m)
+            .and_then(|mt| mt.ammo.as_ref())
+        else {
+            return (1.0, None);
+        };
+        match data.items.get(&ammo.def_id).map(|d| d.effect) {
+            Some(ConsumableEffect::Ammo {
+                damage_mult,
+                burn_dps,
+                burn_secs,
+                ..
+            }) => (
+                damage_mult,
+                (burn_dps > 0.0).then_some((burn_dps, burn_secs)),
+            ),
+            _ => (1.0, None),
         }
     }
 
@@ -308,6 +342,9 @@ impl Battle {
             return false;
         }
 
+        // Loaded ammunition modifies this shot (`combat.md` §3.3).
+        let (ammo_mult, ammo_burn) = self.ammo_effect(data, attacker, weapon);
+
         // Pay costs up front.
         {
             let u = &mut self.units[attacker];
@@ -318,6 +355,15 @@ impl Battle {
             }
             // Firing hard weapons strains the host (`game_design.md` §4.3).
             u.strain += draw * bal.strain.fire_gain_per_draw;
+        }
+        // A fired round is spent whether it lands or not.
+        if let WeaponRef::Mount(m) = weapon {
+            if let Some(ammo) = &mut self.units[attacker].mounts[m].ammo {
+                ammo.rounds = ammo.rounds.saturating_sub(1);
+                if ammo.rounds == 0 {
+                    self.units[attacker].mounts[m].ammo = None;
+                }
+            }
         }
 
         // Accuracy roll.
@@ -335,8 +381,29 @@ impl Battle {
             return true; // the shot happened; it just missed
         }
 
-        let dealt = damage * synergy;
+        let dealt = damage * synergy * ammo_mult;
         self.apply_damage(data, attacker, target, dealt, called);
+        // Incendiary ammo leaves a burn on the struck body.
+        if let Some((dps, secs)) = ammo_burn {
+            if self.units[target].alive() {
+                let intact = self.units[target].intact_limbs();
+                if intact.is_empty() {
+                    self.units[target].core_dots.push(Dot {
+                        dps,
+                        remaining: secs,
+                    });
+                } else {
+                    let li = intact[self.rng.below(intact.len())];
+                    self.units[target].limb_dots.push((
+                        li,
+                        Dot {
+                            dps,
+                            remaining: secs,
+                        },
+                    ));
+                }
+            }
+        }
 
         // Ridden boosts that ride along on weapon hits (`combat.md` §3.2).
         if boost_active {

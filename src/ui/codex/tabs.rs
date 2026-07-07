@@ -403,6 +403,161 @@ pub(super) fn party(
     }
 }
 
+// ----------------------------------------------------------------- Items
+
+pub(super) fn items(
+    data: &GameData,
+    session: &GameSession,
+    c: Rect,
+    mouse: Vec2,
+    actions: &mut Vec<CodexAction>,
+) {
+    let inv = &session.profile.inventory;
+    text(
+        "Consumables — potions and ammo are used in combat; field kits on the road.",
+        c.x,
+        c.y + 6.0,
+        15.0,
+        dark::TEXT_DIM,
+    );
+    let mut y = c.y + 36.0;
+    if inv.consumables.is_empty() {
+        text(
+            "The bag is empty. Buy supplies at a settlement post.",
+            c.x,
+            y,
+            14.0,
+            dark::TEXT_DIM,
+        );
+    }
+    for (def_id, count) in &inv.consumables {
+        let Some(def) = data.items.get(def_id) else {
+            continue;
+        };
+        if y > c.bottom() - 60.0 {
+            break;
+        }
+        text(
+            &format!("{}  ×{}   [{}]", def.name, count, def.category()),
+            c.x,
+            y,
+            16.0,
+            dark::TEXT_BRIGHT,
+        );
+        text(&def.description, c.x + 16.0, y + 18.0, 13.0, dark::TEXT_DIM);
+        y += 44.0;
+    }
+
+    // Field repair: fix a damaged graft with a kit, anywhere.
+    let damaged = inv.items.iter().filter(|i| !i.is_usable()).count();
+    let kits = inv.consumable_count("repair_kit");
+    let btn = Rect::new(c.x, c.bottom() - 44.0, 360.0, 36.0);
+    if kits > 0 && damaged > 0 {
+        if menu_button(
+            btn,
+            &format!("Use Repair Kit — mend a damaged graft ({} hurt)", damaged),
+            true,
+            mouse,
+        ) {
+            actions.push(CodexAction::FieldRepair);
+        }
+    } else {
+        let note = if damaged == 0 {
+            "No damaged graftware.".to_owned()
+        } else {
+            "No repair kits in the bag.".to_owned()
+        };
+        text(&note, c.x, c.bottom() - 20.0, 13.0, dark::TEXT_DIM);
+    }
+}
+
+// ------------------------------------------------------------- Equipment
+
+pub(super) fn equipment(
+    data: &GameData,
+    session: &GameSession,
+    c: Rect,
+    at_settlement: bool,
+    mouse: Vec2,
+    actions: &mut Vec<CodexAction>,
+) {
+    if at_settlement {
+        text(
+            "You're at a settlement — the full grafting bench is open.",
+            c.x,
+            c.y + 8.0,
+            16.0,
+            dark::TEXT,
+        );
+        if menu_button(
+            Rect::new(c.x, c.y + 40.0, 340.0, 44.0),
+            "Open Grafting Bench",
+            true,
+            mouse,
+        ) {
+            actions.push(CodexAction::OpenBench);
+        }
+        text(
+            "Mount and swap graftware, repair parts, and rearrange the party.",
+            c.x,
+            c.y + 104.0,
+            14.0,
+            dark::TEXT_DIM,
+        );
+        return;
+    }
+
+    // On the road: no full grafting, just a read-only loadout and field repairs.
+    text(
+        "On the road. Full grafting only at a settlement bench — field repairs are in the Items tab.",
+        c.x,
+        c.y + 8.0,
+        15.0,
+        dark::TEXT_DIM,
+    );
+    let mut y = c.y + 40.0;
+    for cr in session.profile.roster.party_members() {
+        if y > c.bottom() - 24.0 {
+            break;
+        }
+        let sp = cr.species(data);
+        text(
+            cr.display_name(data),
+            c.x,
+            y,
+            16.0,
+            element_color(sp.element),
+        );
+        y += 20.0;
+        if cr.loadout.is_empty() {
+            text("bare chassis", c.x + 16.0, y, 13.0, dark::TEXT_DIM);
+            y += 20.0;
+        }
+        for m in &cr.loadout {
+            let name = session
+                .profile
+                .inventory
+                .item(m.item_id)
+                .and_then(|i| data.graftware.get(&i.def_id))
+                .map(|g| g.name.clone())
+                .unwrap_or_else(|| "?".to_owned());
+            let limb = sp
+                .limb(&m.limb_id)
+                .map(|l| l.name.as_str())
+                .unwrap_or("limb");
+            text(
+                &format!("· {} on {}", name, limb),
+                c.x + 16.0,
+                y,
+                13.0,
+                dark::TEXT,
+            );
+            y += 18.0;
+        }
+        y += 8.0;
+    }
+}
+
 // ---------------------------------------------------------------- Quests
 
 pub(super) fn quests(data: &GameData, session: &GameSession, c: Rect) {

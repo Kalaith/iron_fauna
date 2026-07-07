@@ -77,6 +77,12 @@ impl GameSession {
         // teaches the element system on the very first bench visit.
         profile.grant_graft("static_barb", GraftCondition::Intact);
 
+        // Starter consumables so the item systems are live from the first fight.
+        profile.inventory.add_consumable("mend_salve", 2);
+        profile.inventory.add_consumable("vigor_draught", 1);
+        profile.inventory.add_consumable("repair_kit", 1);
+        profile.inventory.add_consumable("incendiary_rounds", 2);
+
         // Pre-graft the starter so the first fight is armed.
         let inventory = profile.inventory.clone();
         if let Some(creature) = profile.roster.creature_mut(starter) {

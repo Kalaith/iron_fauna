@@ -25,11 +25,18 @@ impl GraftItem {
     }
 }
 
+/// Stackable consumables (potions, ammo, field kits) as `def_id → count`. A
+/// `BTreeMap` keeps a stable, sorted order for the UI and serialises cleanly.
+pub type ConsumableBag = std::collections::BTreeMap<String, u32>;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Inventory {
     pub items: Vec<GraftItem>,
     /// Settlement scrip — the survivors' currency.
     pub scrip: i64,
+    /// Spendable consumables by def id.
+    #[serde(default)]
+    pub consumables: ConsumableBag,
 }
 
 impl Inventory {
@@ -37,6 +44,29 @@ impl Inventory {
         Self {
             items: Vec::new(),
             scrip,
+            consumables: ConsumableBag::new(),
+        }
+    }
+
+    pub fn add_consumable(&mut self, def_id: &str, count: u32) {
+        *self.consumables.entry(def_id.to_owned()).or_insert(0) += count;
+    }
+
+    pub fn consumable_count(&self, def_id: &str) -> u32 {
+        self.consumables.get(def_id).copied().unwrap_or(0)
+    }
+
+    /// Spend one of a consumable. Returns false if none are held.
+    pub fn take_consumable(&mut self, def_id: &str) -> bool {
+        match self.consumables.get_mut(def_id) {
+            Some(n) if *n > 0 => {
+                *n -= 1;
+                if *n == 0 {
+                    self.consumables.remove(def_id);
+                }
+                true
+            }
+            _ => false,
         }
     }
 

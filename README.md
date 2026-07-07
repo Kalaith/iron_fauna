@@ -59,8 +59,9 @@ quests, journal) · `Esc` menu.
 
 **Battle:** `Q`/`W`/`E`/`R` fire weapon mounts · `A` natural attack · `S` utility ·
 `D` reinforce · `G` regrow a severed limb · `H` hop to another mount ·
-`C` aim mode (arrows pick a limb region, `X` re-centres) · `Tab` / `Up` / `Down`
-switch target · `1`–`6` toggle a creature's stance · `P` pause · `Space` let a
+`C` aim mode (arrows pick a limb region, `X` re-centres) · `I` items (potions,
+and loading ammo — a reload that takes a turn) · `Tab` / `Up` / `Down` switch
+target · `1`–`6` toggle a creature's stance · `P` pause · `Space` let a
 Wait-paused fight ride.
 
 ## Run / test
