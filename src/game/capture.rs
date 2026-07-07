@@ -94,6 +94,11 @@ impl Game {
                 self.return_to = ReturnTo::Overworld;
                 self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
             }
+            "codex" => self.codex_scene(crate::ui::codex::CodexTab::Status),
+            "codex_corelings" => self.codex_scene(crate::ui::codex::CodexTab::Corelings),
+            "codex_party" => self.codex_scene(crate::ui::codex::CodexTab::Party),
+            "codex_quests" => self.codex_scene(crate::ui::codex::CodexTab::Quests),
+            "codex_journal" => self.codex_scene(crate::ui::codex::CodexTab::Journal),
             "bestiary" => {
                 // Seed a partial collection so the screen shows both states.
                 for sp in [
@@ -129,6 +134,27 @@ impl Game {
             }
             _ => self.mode = Mode::Menu,
         }
+    }
+
+    /// Seeds a party, bounty, verdict, and chronicle, then opens the codex on
+    /// the given tab so each tab has content to show.
+    fn codex_scene(&mut self, tab: crate::ui::codex::CodexTab) {
+        for sp in ["weavil", "kestrelle", "pangol"] {
+            self.session
+                .profile
+                .spawn_creature(&self.data, sp, CreatureOrigin::Wild);
+        }
+        let _ = crate::model::quest::start(&mut self.session, &self.data, "morning_thinning");
+        self.session
+            .world_state
+            .factory_mut("the_cradle")
+            .heart_defeated = true;
+        self.session.world_state.factory_mut("the_cradle").verdict = Some(Verdict::Reseed);
+        crate::model::journal::record(&mut self.session, "Silenced the Cradle's heart.");
+        crate::model::journal::record(&mut self.session, "Chose to reseed the meadow.");
+        let mut screen = crate::ui::codex::CodexScreen::new(&self.session, None);
+        screen.tab = tab;
+        self.mode = Mode::Codex(Box::new(screen));
     }
 
     /// A deterministic sample encounter for engine testing from the menu.

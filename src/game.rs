@@ -1,8 +1,9 @@
 //! High-level game loop and state transitions.
 
+mod actions;
 mod capture;
 
-use crate::audio::{Audio, Sfx};
+use crate::audio::Audio;
 use crate::combat::engine::Battle;
 use crate::combat::unit::UnitSpec;
 use crate::combat::{resolve, BattleContext, RiderMods, Side, Stance};
@@ -13,12 +14,13 @@ use crate::model::worldstate::Verdict;
 use crate::state::{migrate_save_value, GameSession, SaveData};
 use crate::ui::battle::{BattleScreen, BattleScreenResult};
 use crate::ui::bestiary::BestiaryScreen;
+use crate::ui::codex::CodexScreen;
 use crate::ui::ledger::LedgerScreen;
-use crate::ui::outfit::{OutfitAction, OutfitScreen};
+use crate::ui::outfit::OutfitScreen;
 use crate::ui::overworld::{OverworldResult, OverworldScreen};
-use crate::ui::settlement::{sell_price, SettlementAction, SettlementScreen, SettlementView};
-use crate::ui::verdict::{FactoryScreenKind, VerdictAction, VerdictScreen};
-use crate::ui::{self, MenuContext, UiAction};
+use crate::ui::settlement::{SettlementScreen, SettlementView};
+use crate::ui::verdict::{FactoryScreenKind, VerdictScreen};
+use crate::ui::{self, MenuContext};
 use macroquad::prelude::*;
 use macroquad_toolkit::assets::AssetManager;
 use macroquad_toolkit::notifications::{
@@ -38,6 +40,7 @@ enum Mode {
     FactoryHeart(VerdictScreen),
     Ledger(LedgerScreen),
     Bestiary(BestiaryScreen),
+    Codex(Box<CodexScreen>),
 }
 
 /// Where a sub-screen (battle, bench) hands control back to.
@@ -127,6 +130,9 @@ impl Game {
                     self.start_battle(BattleContext::WildSubdue, pack);
                 }
                 OverworldResult::HeartInteract(factory_id) => self.heart_interact(&factory_id),
+                OverworldResult::OpenCodex => {
+                    self.mode = Mode::Codex(Box::new(CodexScreen::new(&self.session, None)));
+                }
             },
             _ => {}
         }
@@ -345,6 +351,7 @@ impl Game {
         let mut outfit_actions = Vec::new();
         let mut settlement_actions = Vec::new();
         let mut verdict_actions = Vec::new();
+        let mut codex_actions = Vec::new();
         let mut close_overlay = false;
         match &self.mode {
             Mode::Menu => {
@@ -377,6 +384,9 @@ impl Game {
                     close_overlay = true;
                 }
             }
+            Mode::Codex(screen) => {
+                codex_actions = screen.draw(&self.data, &self.session, &virtual_ui);
+            }
         }
         end_virtual_ui_frame();
 
@@ -392,6 +402,9 @@ impl Game {
         for action in verdict_actions {
             self.apply_verdict_action(action);
         }
+        for action in codex_actions {
+            self.apply_codex_action(action);
+        }
         if close_overlay {
             self.mode = Mode::Menu;
         }
@@ -401,267 +414,6 @@ impl Game {
                 anchor: NotificationAnchor::BottomRight,
                 ..Default::default()
             });
-    }
-
-    fn apply_action(&mut self, action: UiAction) {
-        self.audio.play(Sfx::Select);
-        match action {
-            UiAction::NewGame => {
-                self.session = GameSession::new_game(&self.data);
-                self.notifications.info("A new rider takes the road");
-            }
-            UiAction::EnterWorld => {
-                self.return_to = ReturnTo::Overworld;
-                self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
-            }
-            UiAction::StartDevBattle => self.start_dev_battle(),
-            UiAction::OpenOutfit => {
-                self.return_to = ReturnTo::Menu;
-                self.mode = Mode::Outfit(OutfitScreen {
-                    selected: self.session.profile.roster.party.first().copied(),
-                    selected_slot: None,
-                });
-            }
-            UiAction::OpenLedger => self.mode = Mode::Ledger(LedgerScreen),
-            UiAction::OpenBestiary => self.mode = Mode::Bestiary(BestiaryScreen),
-            UiAction::Save => self.save_game(),
-            UiAction::Load => self.load_game(),
-            UiAction::TogglePace => {
-                self.session.pace = self.session.pace.toggled();
-                self.notifications
-                    .info(format!("Pace: {}", self.session.pace.display_name()));
-            }
-        }
-    }
-
-    fn apply_outfit_action(&mut self, action: OutfitAction) {
-        self.audio.play(Sfx::Select);
-        let Mode::Outfit(screen) = &mut self.mode else {
-            return;
-        };
-        match action {
-            OutfitAction::Back => self.resume(),
-            OutfitAction::SelectCreature(id) => {
-                screen.selected = Some(id);
-                screen.selected_slot = None;
-            }
-            OutfitAction::SelectSlot { limb_id, slot } => {
-                screen.selected_slot = Some((limb_id, slot));
-            }
-            OutfitAction::Unequip {
-                creature,
-                limb_id,
-                slot,
-            } => {
-                if let Some(c) = self.session.profile.roster.creature_mut(creature) {
-                    c.unequip(&limb_id, slot);
-                }
-            }
-            OutfitAction::Equip {
-                creature,
-                limb_id,
-                slot,
-                item,
-            } => {
-                let inventory = self.session.profile.inventory.clone();
-                if let Some(c) = self.session.profile.roster.creature_mut(creature) {
-                    match c.equip(&self.data, &inventory, &limb_id, slot, item) {
-                        Ok(()) => screen.selected_slot = None,
-                        Err(err) => self.notifications.warning(err.message()),
-                    }
-                }
-            }
-            OutfitAction::Repair(item) => {
-                if self.session.profile.inventory.repair(&self.data, item) {
-                    self.notifications.success("Repaired");
-                } else {
-                    self.notifications.warning("Can't afford the repair");
-                }
-            }
-            OutfitAction::ToParty(id) => {
-                if !self.session.profile.roster.add_to_party(&self.data, id) {
-                    self.notifications.warning("No room in the party");
-                }
-            }
-            OutfitAction::ToStorage(id) => {
-                if self.session.profile.roster.party.len() <= 1 {
-                    self.notifications
-                        .warning("The road is no place to walk alone");
-                } else {
-                    self.session.profile.roster.remove_from_party(id);
-                }
-            }
-        }
-    }
-
-    fn apply_settlement_action(&mut self, action: SettlementAction) {
-        self.audio.play(Sfx::Select);
-        let Mode::Settlement(screen) = &mut self.mode else {
-            return;
-        };
-        let settlement_id = screen.settlement_id.clone();
-        match action {
-            SettlementAction::ShowHub => screen.view = SettlementView::Hub,
-            SettlementAction::ShowShop => screen.view = SettlementView::Shop,
-            SettlementAction::ShowRing => screen.view = SettlementView::Ring,
-            SettlementAction::PickStake(duelist) => {
-                screen.view = SettlementView::StakePick { duelist };
-            }
-            SettlementAction::Leave => {
-                self.return_to = ReturnTo::Overworld;
-                self.resume();
-            }
-            SettlementAction::OpenBench => {
-                self.return_to = ReturnTo::Settlement(settlement_id);
-                self.mode = Mode::Outfit(OutfitScreen {
-                    selected: self.session.profile.roster.party.first().copied(),
-                    selected_slot: None,
-                });
-            }
-            SettlementAction::Buy(def_id) => {
-                let price = self
-                    .data
-                    .settlements
-                    .get(&settlement_id)
-                    .and_then(|s| s.shop.iter().find(|e| e.graft == def_id))
-                    .and_then(|e| e.price)
-                    .or_else(|| self.data.graftware.get(&def_id).map(|d| d.value));
-                let Some(price) = price else {
-                    return;
-                };
-                if self.session.profile.inventory.scrip < price {
-                    self.notifications.warning("Not enough scrip");
-                    return;
-                }
-                self.session.profile.inventory.scrip -= price;
-                self.session
-                    .profile
-                    .grant_graft(&def_id, crate::model::inventory::GraftCondition::Intact);
-                let name = self
-                    .data
-                    .graftware
-                    .get(&def_id)
-                    .map(|d| d.name.clone())
-                    .unwrap_or(def_id);
-                self.notifications.success(format!("Bought {}", name));
-            }
-            SettlementAction::Sell(item_id) => {
-                let equipped = self.session.profile.equipped_item_ids();
-                if equipped.contains(&item_id) {
-                    return;
-                }
-                let Some(item) = self.session.profile.inventory.item(item_id) else {
-                    return;
-                };
-                let Some(def) = self.data.graftware.get(&item.def_id) else {
-                    return;
-                };
-                let price = sell_price(def.value);
-                let name = def.name.clone();
-                self.session
-                    .profile
-                    .inventory
-                    .items
-                    .retain(|i| i.id != item_id);
-                self.session.profile.inventory.scrip += price;
-                self.notifications
-                    .info(format!("Sold {} for {}", name, price));
-            }
-            SettlementAction::Challenge { duelist, stake } => {
-                self.start_duel(&settlement_id, &duelist, stake);
-            }
-            SettlementAction::FundWatch => {
-                let cost = self.data.balance.world.watch_cost;
-                let factory_id = self
-                    .data
-                    .settlements
-                    .get(&settlement_id)
-                    .and_then(|s| self.data.world.region(&s.region))
-                    .map(|r| r.gestarium_id.clone());
-                let Some(factory_id) = factory_id else {
-                    return;
-                };
-                if self.session.profile.inventory.scrip < cost {
-                    self.notifications.warning("Not enough scrip");
-                    return;
-                }
-                self.session.profile.inventory.scrip -= cost;
-                self.session.world_state.factory_mut(&factory_id).invested = true;
-                self.notifications
-                    .success("The watch is funded. Someone will be looking.");
-            }
-        }
-    }
-
-    fn apply_verdict_action(&mut self, action: VerdictAction) {
-        self.audio.play(Sfx::Select);
-        let Mode::FactoryHeart(screen) = &self.mode else {
-            return;
-        };
-        let factory_id = screen.factory_id.clone();
-        match action {
-            VerdictAction::Close => {
-                self.return_to = ReturnTo::Overworld;
-                self.resume();
-            }
-            VerdictAction::Choose(verdict) => {
-                self.session.world_state.factory_mut(&factory_id).verdict = Some(verdict);
-                let fname = self
-                    .data
-                    .factories
-                    .get(&factory_id)
-                    .map(|f| f.name.clone())
-                    .unwrap_or_else(|| factory_id.clone());
-                crate::model::journal::record(
-                    &mut self.session,
-                    format!("Passed {} on {}.", verdict.display_name(), fname),
-                );
-                let line = match verdict {
-                    Verdict::Purge => {
-                        "The wombs burn. The region is safe now — and it will never be alive again."
-                    }
-                    Verdict::Reseed => {
-                        "The vats hum a softer note. Green will come back here. Watch it closely."
-                    }
-                    Verdict::Bind => {
-                        "The machine acknowledges a new keeper. It does not ask what you'll grow."
-                    }
-                };
-                self.notifications.info(line);
-                self.return_to = ReturnTo::Overworld;
-                // The last verdict in the world opens the closing reflection.
-                if self.session.world_state.all_judged(&self.data) {
-                    self.mode = Mode::Ledger(LedgerScreen);
-                } else {
-                    self.resume();
-                }
-            }
-            VerdictAction::GrowCore(species_id) => {
-                let Some(factory) = self.data.factories.get(&factory_id).cloned() else {
-                    return;
-                };
-                if self.session.profile.inventory.scrip < factory.grow_cost {
-                    self.notifications.warning("Not enough scrip");
-                    return;
-                }
-                self.session.profile.inventory.scrip -= factory.grow_cost;
-                self.session.profile.spawn_creature(
-                    &self.data,
-                    &species_id,
-                    crate::model::creature::CreatureOrigin::Grown {
-                        factory_id: factory_id.clone(),
-                    },
-                );
-                let name = self
-                    .data
-                    .species
-                    .get(&species_id)
-                    .map(|s| s.name.as_str())
-                    .unwrap_or(&species_id);
-                self.notifications
-                    .success(format!("A {} opens its eyes in the vat", name));
-            }
-        }
     }
 
     fn start_duel(&mut self, settlement_id: &str, duelist_id: &str, stake: Option<u64>) {

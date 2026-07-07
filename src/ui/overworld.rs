@@ -29,6 +29,8 @@ pub enum OverworldResult {
     StartEncounter(Vec<UnitSpec>),
     /// Interacted with a factory heart.
     HeartInteract(String),
+    /// Pressed Tab — open the codex overview.
+    OpenCodex,
     BackToMenu,
 }
 
@@ -86,6 +88,9 @@ impl OverworldScreen {
     ) -> OverworldResult {
         if is_key_pressed(KeyCode::Escape) && self.dialogue.is_none() {
             return OverworldResult::BackToMenu;
+        }
+        if is_key_pressed(KeyCode::Tab) && self.dialogue.is_none() {
+            return OverworldResult::OpenCodex;
         }
 
         let Some(map) = data.world.map(&session.location.map_id) else {

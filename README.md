@@ -53,8 +53,9 @@ to face the keeper you made possible.
 
 ## Controls
 
-**Overworld:** `WASD` / arrows move · `Space` / `Enter` interact (talk, enter a
-door) · `Esc` menu.
+**Overworld / settlements:** `WASD` / arrows move · `Space` / `Enter` interact
+(talk, enter a door) · `Tab` open the **Codex** (status, corelings, party order,
+quests, journal) · `Esc` menu.
 
 **Battle:** `Q`/`W`/`E`/`R` fire weapon mounts · `A` natural attack · `S` utility ·
 `D` reinforce · `G` regrow a severed limb · `H` hop to another mount ·

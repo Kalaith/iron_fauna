@@ -66,7 +66,9 @@ pub fn current_step(data: &GameData, session: &GameSession) -> String {
         "Revived, but untended — fund the Watch before prosperity forgets.".to_owned()
     } else {
         match f.verdict {
-            Some(Verdict::Purge) => "At peace. Dead peace, but peace. Your verdict holds.".to_owned(),
+            Some(Verdict::Purge) => {
+                "At peace. Dead peace, but peace. Your verdict holds.".to_owned()
+            }
             Some(Verdict::Bind) => "The factory answers to your hand now.".to_owned(),
             _ => "Thriving under your watch.".to_owned(),
         }

@@ -16,6 +16,7 @@ pub enum SettlementAction {
     ShowShop,
     ShowRing,
     OpenBench,
+    OpenCodex,
     Leave,
     Buy(String),
     Sell(u64),
@@ -69,6 +70,9 @@ impl SettlementScreen {
             } else {
                 SettlementAction::ShowHub
             });
+        }
+        if is_key_pressed(KeyCode::Tab) {
+            actions.push(SettlementAction::OpenCodex);
         }
 
         self.draw_header(settlement, session, mouse, &mut actions);
