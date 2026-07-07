@@ -5,6 +5,7 @@
 use crate::data::species::SpeciesDef;
 use crate::data::GameData;
 use crate::state::GameSession;
+use crate::ui::creature_art;
 use crate::ui::{element_color, menu_button, LOGICAL_HEIGHT, LOGICAL_WIDTH};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -105,29 +106,14 @@ impl BestiaryScreen {
                 .with_left_accent(4.0, accent),
         );
 
-        // A little kawaii core glyph, greyed if uncaught.
-        let cx = rect.x + 30.0;
+        // A procedurally-generated portrait of the chassis; uncaught species
+        // show only their silhouette, a shape to chase down in the wild.
+        let cx = rect.x + 32.0;
         let cy = rect.y + rect.h * 0.5;
-        draw_circle(
-            cx,
-            cy,
-            15.0,
-            if owned {
-                accent
-            } else {
-                Color::new(0.20, 0.22, 0.25, 1.0)
-            },
-        );
         if owned {
-            draw_circle(cx - 4.0, cy - 3.0, 3.5, Color::new(0.1, 0.1, 0.12, 1.0));
-            draw_circle(cx + 5.0, cy - 3.0, 3.5, Color::new(0.1, 0.1, 0.12, 1.0));
+            creature_art::draw_war_body(cx, cy, 19.0, sp, &[]);
         } else {
-            draw_ui_text_ex(
-                "?",
-                cx - 4.0,
-                cy + 6.0,
-                TextStyle::new(20.0, dark::TEXT_DIM).params(),
-            );
+            creature_art::draw_silhouette(cx, cy, 19.0, sp);
         }
 
         let name = if owned {
@@ -201,12 +187,28 @@ impl BestiaryScreen {
             &SurfaceStyle::new(Color::new(0.07, 0.075, 0.10, 0.97))
                 .with_border(1.0, Color::new(0.35, 0.40, 0.50, 0.6)),
         );
+        let text_w = bar.w - 320.0;
+
+        // Always-on before/after: the hovered owned chassis, or the first one
+        // collected. Bare chassis on the left, the same chassis grafted on the
+        // right — the whole point of the game in one glance.
+        let featured = hovered
+            .filter(|s| session.profile.roster.owns_species(&s.id))
+            .or_else(|| self.first_owned(data, session));
+        if let Some(sp) = featured {
+            self.draw_before_after(sp, bar);
+        }
+
         let Some(sp) = hovered else {
-            draw_ui_text_ex(
+            draw_text_block(
                 "Hover a core to inspect its chassis. Catch them in the wild or free them from the factories.",
                 bar.x + 18.0,
-                bar.y + 44.0,
-                TextStyle::new(15.0, dark::TEXT_DIM).params(),
+                bar.y + 30.0,
+                text_w,
+                44.0,
+                15.0,
+                5.0,
+                dark::TEXT_DIM,
             );
             return;
         };
@@ -223,13 +225,12 @@ impl BestiaryScreen {
         let d = sp.derived(&data.balance);
         draw_ui_text_ex(
             &format!(
-                "{}   —   Power {}  Speed {}  ·  {} mounts  ·  Vigor {:.0}  ·  Strain {:.0}  ·  {} temperament",
+                "{}  —  Pow {}  Spd {}  ·  {} mounts  ·  Vigor {:.0}  ·  {} temperament",
                 sp.name,
                 sp.power,
                 sp.speed,
                 sp.mount_count(),
                 d.vigor_max,
-                d.strain_threshold,
                 sp.temperament.display_name(),
             ),
             bar.x + 18.0,
@@ -240,12 +241,56 @@ impl BestiaryScreen {
             &sp.description,
             bar.x + 18.0,
             bar.y + 38.0,
-            bar.w - 36.0,
+            text_w,
             36.0,
             14.0,
             4.0,
             dark::TEXT,
         );
+    }
+
+    /// First collected species in the grid's display order (tier, then id).
+    fn first_owned<'a>(&self, data: &'a GameData, session: &GameSession) -> Option<&'a SpeciesDef> {
+        let mut owned: Vec<&SpeciesDef> = data
+            .species
+            .iter()
+            .map(|(_, s)| s)
+            .filter(|s| session.profile.roster.owns_species(&s.id))
+            .collect();
+        owned.sort_by(|a, b| a.tier.cmp(&b.tier).then(a.id.cmp(&b.id)));
+        owned.into_iter().next()
+    }
+
+    /// Bare chassis → grafted, side by side, with an arrow between.
+    fn draw_before_after(&self, sp: &SpeciesDef, bar: Rect) {
+        let cy = bar.y + bar.h * 0.5 - 4.0;
+        let u = 24.0;
+        let bare_cx = bar.right() - 210.0;
+        let graft_cx = bar.right() - 74.0;
+
+        creature_art::draw_war_body(bare_cx, cy, u, sp, &[]);
+        creature_art::draw_war_body(graft_cx, cy, u, sp, &creature_art::sample_grafts(sp));
+
+        // Arrow drawn from primitives — the display font lacks a glyph for it.
+        let mx = (bare_cx + graft_cx) * 0.5;
+        let arrow = dark::TEXT_DIM;
+        draw_line(mx - 13.0, cy, mx + 6.0, cy, 3.0, arrow);
+        draw_triangle(
+            vec2(mx + 13.0, cy),
+            vec2(mx + 4.0, cy - 6.0),
+            vec2(mx + 4.0, cy + 6.0),
+            arrow,
+        );
+        for (cx, label) in [(bare_cx, "chassis"), (graft_cx, "grafted")] {
+            draw_text_centered_in_box_ex(
+                label,
+                cx - 50.0,
+                bar.bottom() - 15.0,
+                100.0,
+                12.0,
+                TextStyle::new(11.0, dark::TEXT_DIM),
+            );
+        }
     }
 }
 

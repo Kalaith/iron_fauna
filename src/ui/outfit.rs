@@ -3,7 +3,9 @@
 //! outfitting bench once the settlement layer lands.
 
 use crate::data::GameData;
+use crate::model::creature::CreatureInstance;
 use crate::state::GameSession;
+use crate::ui::creature_art;
 use crate::ui::{element_color, menu_button, LOGICAL_HEIGHT, LOGICAL_WIDTH};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
@@ -248,6 +250,11 @@ impl OutfitScreen {
             TextStyle::new(16.0, dark::TEXT),
         );
         let content = rect.inset(16.0);
+
+        // Live war-body portrait: reflects the current loadout, so equipping and
+        // unequipping is the before/after of grafting in real time.
+        self.draw_portrait(data, session, creature, content);
+
         let mut y = content.y + 42.0;
 
         draw_ui_text_ex(
@@ -288,7 +295,8 @@ impl OutfitScreen {
         let draw_total = creature.total_power_draw(data, &session.profile.inventory);
         let over = creature.overdraw(data, &session.profile.inventory);
         let frac = (draw_total / capacity).min(1.0);
-        let bar = Rect::new(content.x, y, content.w, 20.0);
+        // Leave the top-right clear for the war-body portrait.
+        let bar = Rect::new(content.x, y, content.w - 168.0, 20.0);
         draw_rectangle(
             bar.x,
             bar.y,
@@ -318,6 +326,8 @@ impl OutfitScreen {
             TextStyle::new(13.0, dark::TEXT_BRIGHT).params(),
         );
         y += 34.0;
+        // Drop below the portrait before listing limbs.
+        y = y.max(content.y + 196.0);
 
         // Limbs and mount slots.
         for limb in &species.limbs {
@@ -455,6 +465,45 @@ impl OutfitScreen {
             );
             ry += 18.0;
         }
+    }
+
+    /// The live war-body portrait — bare chassis, then bristling with grafts as
+    /// they are mounted. This is the before/after of grafting made visible.
+    fn draw_portrait(
+        &self,
+        data: &GameData,
+        session: &GameSession,
+        creature: &CreatureInstance,
+        content: Rect,
+    ) {
+        let size = 158.0;
+        let frame = Rect::new(content.right() - size, content.y + 24.0, size, size);
+        draw_surface(
+            frame,
+            &SurfaceStyle::new(Color::new(0.055, 0.065, 0.085, 1.0))
+                .with_border(1.0, Color::new(0.30, 0.34, 0.42, 0.6)),
+        );
+        let grafts = creature_art::grafts_for_creature(data, session, creature);
+        creature_art::draw_war_body(
+            frame.x + size * 0.5,
+            frame.y + size * 0.52,
+            46.0,
+            creature.species(data),
+            &grafts,
+        );
+        let caption = if grafts.is_empty() {
+            "bare chassis".to_owned()
+        } else {
+            format!("grafted · {} part(s)", grafts.len())
+        };
+        draw_text_centered_in_box_ex(
+            &caption,
+            frame.x,
+            frame.bottom() - 17.0,
+            frame.w,
+            14.0,
+            TextStyle::new(12.0, dark::TEXT_DIM),
+        );
     }
 
     fn draw_item_panel(

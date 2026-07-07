@@ -2,6 +2,7 @@
 
 pub mod battle;
 pub mod bestiary;
+pub mod creature_art;
 pub mod ledger;
 pub mod outfit;
 pub mod overworld;

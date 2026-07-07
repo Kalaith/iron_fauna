@@ -1,14 +1,18 @@
 //! The battle screen: side-view battlefield, ridden-creature controls,
 //! Wait/Active pacing, and outcome overlay.
 
-use crate::audio::{Audio, Sfx};
+mod events_view;
+mod hud;
+
+use crate::audio::Audio;
 use crate::combat::engine::Battle;
 use crate::combat::events::BattleEvent;
-use crate::combat::{BattleOutcome, CalledTarget, PlayerCommand, Side, Stance, UnitId};
+use crate::combat::{CalledTarget, PlayerCommand, Side, Stance, UnitId};
 use crate::data::species::LimbRegion;
 use crate::data::GameData;
 use crate::state::PaceSetting;
-use crate::ui::{element_color, LOGICAL_HEIGHT, LOGICAL_WIDTH};
+use crate::ui::{creature_art, LOGICAL_HEIGHT, LOGICAL_WIDTH};
+use events_view::{describe_event, is_decision_point, sfx_for_event};
 use macroquad::prelude::*;
 use macroquad_toolkit::prelude::*;
 use macroquad_toolkit::ui::draw_ui_text_ex;
@@ -570,129 +574,71 @@ impl BattleScreen {
         let u = &self.battle.units[id];
         let x = self.world_to_screen(u.pos, data);
         let r = self.size_radius(data, id);
+        // Body centre sits a radius above the ground so the feet meet the line.
         let y = GROUND_Y - r;
         let species = u.species(data);
-        let body_color = if u.downed {
-            Color::new(0.25, 0.25, 0.28, 1.0)
-        } else {
-            element_color(species.element)
-        };
 
-        // War-body shell: intact limbs drawn as plates around the core.
-        let limb_count = u.limbs.len().max(1);
-        for (i, limb) in u.limbs.iter().enumerate() {
-            let angle = std::f32::consts::TAU * (i as f32 / limb_count as f32) - 1.2;
-            let lx = x + angle.cos() * r * 0.95;
-            let ly = y + angle.sin() * r * 0.7;
-            if limb.intact() {
-                let frac = (limb.hp / limb.max_hp).clamp(0.0, 1.0);
-                let c = Color::new(
-                    body_color.r * (0.5 + 0.5 * frac),
-                    body_color.g * (0.5 + 0.5 * frac),
-                    body_color.b * (0.5 + 0.5 * frac),
-                    1.0,
-                );
-                draw_rectangle(lx - 6.0, ly - 6.0, 12.0, 12.0, c);
-                draw_rectangle_lines(
-                    lx - 6.0,
-                    ly - 6.0,
-                    12.0,
-                    12.0,
-                    1.5,
-                    Color::new(0.1, 0.1, 0.1, 0.8),
-                );
-            } else {
-                // Severed: a raw stump, regrowth shown filling back in.
-                let regrow = self.battle.units[id].regrow_target == Some(i);
-                let frac = (limb.regrow_hp / limb.max_hp).clamp(0.0, 1.0);
-                draw_rectangle(
-                    lx - 5.0,
-                    ly - 5.0,
-                    10.0,
-                    10.0,
-                    Color::new(0.35, 0.12, 0.12, 0.9),
-                );
-                if regrow || frac > 0.0 {
-                    draw_rectangle(
-                        lx - 5.0,
-                        ly - 5.0 + 10.0 * (1.0 - frac),
-                        10.0,
-                        10.0 * frac,
-                        Color::new(0.4, 0.6, 0.35, 0.9),
-                    );
+        // Grafts still riding on intact limbs, as the procedural renderer draws
+        // them elsewhere (bench, bestiary) — one shared creature look.
+        let grafts: Vec<creature_art::GraftVisual> = u
+            .mounts
+            .iter()
+            .filter_map(|m| {
+                let limb = u.limbs.get(m.limb_index)?;
+                if !limb.intact() {
+                    return None; // it went down with the limb
                 }
-            }
-            // Mounted graftware on this limb: ugly bolt-on triangles.
-            for m in u.mounts.iter().filter(|m| m.limb_index == i) {
-                let mc = if m.destroyed {
-                    Color::new(0.5, 0.15, 0.1, 1.0)
-                } else if m.detached {
-                    Color::new(0.3, 0.3, 0.3, 0.6)
-                } else {
-                    Color::new(0.75, 0.72, 0.65, 1.0)
-                };
-                draw_triangle(
-                    vec2(lx, ly - 12.0),
-                    vec2(lx - 5.0, ly - 4.0),
-                    vec2(lx + 5.0, ly - 4.0),
-                    mc,
-                );
-            }
+                let region = u.limb_def(data, limb).region;
+                let def = data.graftware.get(&m.def_id)?;
+                Some(creature_art::GraftVisual {
+                    region,
+                    kind: def.kind,
+                    element: def.element,
+                    broken: !m.usable(),
+                })
+            })
+            .collect();
+
+        // Core-exposed warm glow behind the head — the vulnerable moment.
+        if u.core_exposed() && !u.downed {
+            let head = creature_art::region_point(x, y, r, LimbRegion::Head);
+            let pulse = 0.22 + 0.12 * (self.battle.time * 5.0).sin().abs();
+            draw_circle(head.x, head.y, r * 0.6, Color::new(1.0, 0.9, 0.55, pulse));
         }
 
-        // The core: the small precious center. Exposed cores glow.
-        let core_frac = (u.core_hp / u.core_max).clamp(0.0, 1.0);
-        let exposed = u.core_exposed();
-        let core_r = r * 0.45;
-        if exposed && !u.downed {
-            draw_circle(x, y, core_r + 4.0, Color::new(1.0, 0.9, 0.6, 0.35));
+        if u.downed {
+            creature_art::draw_downed(x, y, r, species, &grafts);
+        } else {
+            creature_art::draw_war_body(x, y, r, species, &grafts);
         }
-        draw_circle(x, y, core_r, Color::new(0.95, 0.92, 0.88, 1.0));
-        draw_circle(
-            x,
-            y,
-            core_r * core_frac.max(0.15),
-            if u.downed {
-                Color::new(0.4, 0.4, 0.45, 1.0)
-            } else {
-                body_color
-            },
-        );
-        // Kawaii face: two big eyes, catch-lights, and a blush — the core is
-        // the precious thing you must protect on sight (`game_design.md` §10).
-        if !u.downed {
-            let face = x + if u.side == Side::Player { -1.0 } else { 1.0 } * core_r * 0.12;
-            let eye_dx = core_r * 0.34;
-            let eye_y = y - core_r * 0.12;
-            let eye_r = core_r * 0.24;
-            for side in [-1.0, 1.0] {
-                let ex = face + side * eye_dx;
-                draw_circle(ex, eye_y, eye_r, Color::new(0.1, 0.1, 0.12, 1.0));
-                draw_circle(ex + eye_r * 0.3, eye_y - eye_r * 0.35, eye_r * 0.4, WHITE);
-                // Soft blush under each eye.
+
+        // Severed limbs: a raw red stump at the region's anchor, regrowth
+        // filling it back green (`combat.md` §3.1, §4.2).
+        for (i, limb) in u.limbs.iter().enumerate() {
+            if limb.intact() {
+                continue;
+            }
+            let region = u.limb_def(data, limb).region;
+            let p = creature_art::region_point(x, y, r, region);
+            draw_circle(p.x, p.y, 6.0, Color::new(0.4, 0.12, 0.12, 0.95));
+            let frac = (limb.regrow_hp / limb.max_hp).clamp(0.0, 1.0);
+            if u.regrow_target == Some(i) || frac > 0.0 {
                 draw_circle(
-                    ex,
-                    eye_y + eye_r * 1.3,
-                    eye_r * 0.5,
-                    Color::new(0.95, 0.55, 0.55, 0.35),
+                    p.x,
+                    p.y,
+                    6.0 * frac.max(0.15),
+                    Color::new(0.4, 0.6, 0.35, 0.95),
                 );
             }
-            // Tiny mouth.
-            draw_circle(
-                face,
-                y + core_r * 0.42,
-                core_r * 0.07,
-                Color::new(0.4, 0.2, 0.22, 0.9),
-            );
         }
 
         // Shield ring.
         if u.shield > 0.0 {
-            draw_circle_lines(x, y, r + 6.0, 2.0, Color::new(0.5, 0.75, 0.95, 0.8));
+            draw_circle_lines(x, y, r + 8.0, 2.0, Color::new(0.5, 0.75, 0.95, 0.8));
         }
         // Berserk flare.
         if u.berserk() {
-            draw_circle_lines(x, y, r + 10.0, 2.5, Color::new(0.95, 0.3, 0.2, 0.9));
+            draw_circle_lines(x, y, r + 12.0, 2.5, Color::new(0.95, 0.3, 0.2, 0.9));
         }
 
         // Name + bars.
@@ -730,337 +676,9 @@ impl BattleScreen {
             );
         }
     }
-
-    fn draw_hud(&self, data: &GameData) {
-        // Rider sits on the ridden creature's head (`combat.md` §2.2).
-        if let Some(id) = self.battle.ridden_unit() {
-            let u = &self.battle.units[id];
-            let x = self.world_to_screen(u.pos, data);
-            let r = self.size_radius(data, id);
-            let y = GROUND_Y - r * 2.0 - 8.0;
-            draw_circle(x, y - 6.0, 5.0, Color::new(0.9, 0.85, 0.75, 1.0));
-            draw_rectangle(
-                x - 4.0,
-                y - 2.0,
-                8.0,
-                10.0,
-                Color::new(0.55, 0.45, 0.35, 1.0),
-            );
-        } else if let Some((to, timer)) = self.battle.rider.hop {
-            let u = &self.battle.units[to];
-            let x = self.world_to_screen(u.pos, data);
-            draw_ui_text_ex(
-                &format!("rider crossing… {:.1}s", timer),
-                x - 50.0,
-                GROUND_Y - 120.0,
-                TextStyle::new(14.0, Color::new(0.95, 0.85, 0.5, 1.0)).params(),
-            );
-        } else if self.battle.rider.exposed() && !self.battle.over() {
-            draw_ui_text_ex(
-                "RIDER EXPOSED — hop to a standing creature [H]",
-                LOGICAL_WIDTH * 0.5 - 220.0,
-                80.0,
-                TextStyle::new(20.0, Color::new(0.95, 0.4, 0.3, 1.0)).params(),
-            );
-        }
-
-        // Top strip: context + clock + pace.
-        let context = match self.battle.context {
-            crate::combat::BattleContext::WildSubdue => "Wild Subdue",
-            crate::combat::BattleContext::FactoryDismantle => "Factory Dismantle",
-            crate::combat::BattleContext::Duel => "Sanctioned Duel",
-        };
-        draw_ui_text_ex(
-            &format!(
-                "{}   ·   {:.0}s   ·   pace: {}   [P] pause",
-                context,
-                self.battle.time,
-                self.pace.display_name()
-            ),
-            18.0,
-            26.0,
-            TextStyle::new(16.0, dark::TEXT_DIM).params(),
-        );
-
-        // Ridden panel: weapons + called shot.
-        if let Some(id) = self.battle.ridden_unit() {
-            let u = &self.battle.units[id];
-            let mut y = 52.0;
-            draw_ui_text_ex(
-                &format!(
-                    "Riding {} — vigor {:.0}/{:.0}  strain {:.0}/{:.0}",
-                    u.spec_name, u.vigor, u.vigor_max, u.strain, u.strain_threshold
-                ),
-                18.0,
-                y,
-                TextStyle::new(16.0, dark::TEXT_BRIGHT).params(),
-            );
-            y += 24.0;
-            let keys = ["Q", "W", "E", "R"];
-            for (i, &mi) in u.weapon_mounts(data).iter().take(4).enumerate() {
-                let m = &u.mounts[mi];
-                let def_name = data
-                    .graftware
-                    .get(&m.def_id)
-                    .map(|d| d.name.as_str())
-                    .unwrap_or("?");
-                let status = if m.cooldown > 0.0 {
-                    format!("{:.1}s", m.cooldown)
-                } else {
-                    "ready".to_owned()
-                };
-                draw_ui_text_ex(
-                    &format!("[{}] {} — {}", keys[i], def_name, status),
-                    18.0,
-                    y,
-                    TextStyle::new(
-                        15.0,
-                        if m.cooldown <= 0.0 {
-                            dark::TEXT
-                        } else {
-                            dark::TEXT_DIM
-                        },
-                    )
-                    .params(),
-                );
-                y += 20.0;
-            }
-            let hint = if self.aim {
-                "AIMING — arrows pick a limb · Q/W/E/R fire · [X] center · [C] release · [Tab] switch foe"
-            } else {
-                "[A] bite  [S] utility  [D] reinforce  [G] regrow  [H] hop  [C] aim  [1-6] stance"
-            };
-            draw_ui_text_ex(
-                hint,
-                18.0,
-                y + 6.0,
-                TextStyle::new(
-                    14.0,
-                    if self.aim {
-                        Color::new(0.98, 0.55, 0.4, 1.0)
-                    } else {
-                        dark::TEXT_DIM
-                    },
-                )
-                .params(),
-            );
-        }
-
-        // Called-shot readout on the target.
-        if let Some(target) = self.battle.units.get(self.target) {
-            let called_desc = match self.called {
-                None => "center mass".to_owned(),
-                Some(CalledTarget::Mount(mi)) => match target.mounts.get(mi) {
-                    Some(m) => format!(
-                        "aimed: {} ({:.0}%)",
-                        data.graftware
-                            .get(&m.def_id)
-                            .map(|d| d.name.as_str())
-                            .unwrap_or("graft"),
-                        (m.graft_hp / m.graft_hp_max * 100.0).clamp(0.0, 100.0)
-                    ),
-                    None => "aimed: graft".to_owned(),
-                },
-                Some(CalledTarget::Limb(li)) => format!(
-                    "aimed: {}",
-                    target
-                        .limbs
-                        .get(li)
-                        .map(|l| target.limb_def(data, l).name.clone())
-                        .unwrap_or_else(|| "limb".to_owned())
-                ),
-            };
-            draw_ui_text_ex(
-                &format!("target: {} — {}", target.spec_name, called_desc),
-                LOGICAL_WIDTH - 420.0,
-                26.0,
-                TextStyle::new(16.0, Color::new(0.95, 0.75, 0.7, 1.0)).params(),
-            );
-        }
-    }
-
-    fn draw_log(&self) {
-        let start = self.log.len().saturating_sub(LOG_LINES);
-        let mut y = LOGICAL_HEIGHT - 24.0 * LOG_LINES as f32 - 16.0;
-        for line in &self.log[start..] {
-            draw_ui_text_ex(line, 18.0, y, TextStyle::new(15.0, dark::TEXT_DIM).params());
-            y += 24.0;
-        }
-    }
-
-    fn draw_pause_banner(&self) {
-        let label = if self.manual_pause {
-            "PAUSED  —  [P] resume"
-        } else {
-            "WAITING — choose an action, or [Space] to let it ride"
-        };
-        draw_rectangle(
-            0.0,
-            LOGICAL_HEIGHT * 0.5 - 26.0,
-            LOGICAL_WIDTH,
-            40.0,
-            Color::new(0.0, 0.0, 0.0, 0.55),
-        );
-        draw_ui_text_ex(
-            label,
-            LOGICAL_WIDTH * 0.5 - 200.0,
-            LOGICAL_HEIGHT * 0.5,
-            TextStyle::new(20.0, Color::new(0.9, 0.9, 0.85, 1.0)).params(),
-        );
-    }
-
-    fn draw_outcome(&self, data: &GameData) {
-        draw_rectangle(
-            0.0,
-            0.0,
-            LOGICAL_WIDTH,
-            LOGICAL_HEIGHT,
-            Color::new(0.0, 0.0, 0.0, 0.65),
-        );
-        let (title, lines) = match &self.battle.outcome {
-            Some(BattleOutcome::Victory(rewards)) => {
-                let mut lines = Vec::new();
-                for s in &rewards.captured_species {
-                    let name = data.species.get(s).map(|d| d.name.as_str()).unwrap_or(s);
-                    lines.push(format!("core recovered: {}", name));
-                }
-                for s in &rewards.salvage {
-                    let name = data.graftware.get(s).map(|d| d.name.as_str()).unwrap_or(s);
-                    lines.push(format!("salvage: {}", name));
-                }
-                lines.push(format!("scrip: +{}", rewards.scrip));
-                ("THE SHELL COMES DOWN", lines)
-            }
-            Some(BattleOutcome::Fled) => (
-                "YOU FLEE AND ESCAPE",
-                vec!["Every core cracked. They will recover — so will you.".to_owned()],
-            ),
-            None => ("", Vec::new()),
-        };
-        draw_ui_text_ex(
-            title,
-            LOGICAL_WIDTH * 0.5 - 190.0,
-            240.0,
-            TextStyle::new(34.0, Color::new(0.92, 0.9, 0.85, 1.0)).params(),
-        );
-        let mut y = 300.0;
-        for line in &lines {
-            draw_ui_text_ex(
-                line,
-                LOGICAL_WIDTH * 0.5 - 160.0,
-                y,
-                TextStyle::new(18.0, dark::TEXT).params(),
-            );
-            y += 28.0;
-        }
-        draw_ui_text_ex(
-            "[Enter] continue",
-            LOGICAL_WIDTH * 0.5 - 70.0,
-            y + 30.0,
-            TextStyle::new(16.0, dark::TEXT_DIM).params(),
-        );
-    }
 }
 
 fn draw_bar(x: f32, y: f32, w: f32, h: f32, frac: f32, color: Color) {
     draw_rectangle(x, y, w, h, Color::new(0.12, 0.12, 0.14, 1.0));
     draw_rectangle(x, y, w * frac.clamp(0.0, 1.0), h, color);
-}
-
-/// Maps a battle event to its sound effect, if any.
-fn sfx_for_event(event: &BattleEvent) -> Option<Sfx> {
-    Some(match event {
-        BattleEvent::Hit { to_core, .. } => {
-            if *to_core {
-                Sfx::Crack
-            } else {
-                Sfx::Hit
-            }
-        }
-        BattleEvent::LimbSevered { .. } => Sfx::Sever,
-        BattleEvent::CoreCracked { .. } => Sfx::Crack,
-        BattleEvent::HopStarted { .. } => Sfx::Hop,
-        BattleEvent::GraftRejected { .. } | BattleEvent::BerserkStarted { .. } => Sfx::Reject,
-        _ => return None,
-    })
-}
-
-fn is_decision_point(event: &BattleEvent) -> bool {
-    matches!(
-        event,
-        BattleEvent::RiddenActionReady { .. }
-            | BattleEvent::HopLanded { .. }
-            | BattleEvent::RiderExposed
-            | BattleEvent::BerserkStarted { .. }
-            | BattleEvent::CoreExposed { .. }
-    )
-}
-
-fn describe_event(battle: &Battle, data: &GameData, event: &BattleEvent) -> Option<String> {
-    let name = |id: &UnitId| battle.units[*id].spec_name.clone();
-    let line = match event {
-        BattleEvent::Hit {
-            attacker,
-            target,
-            amount,
-            to_core,
-        } => {
-            if *to_core {
-                format!(
-                    "{} strikes {}'s core for {:.0}!",
-                    name(attacker),
-                    name(target),
-                    amount
-                )
-            } else {
-                return None; // routine limb chip — too noisy for the log
-            }
-        }
-        BattleEvent::Miss { attacker, target } => {
-            format!("{} misses {}", name(attacker), name(target))
-        }
-        BattleEvent::LimbSevered { unit, limb_name } => {
-            format!("{} loses its {}!", name(unit), limb_name)
-        }
-        BattleEvent::LimbRegrown { unit, limb_name } => {
-            format!("{}'s {} regrows", name(unit), limb_name)
-        }
-        BattleEvent::GraftDestroyed { unit, graft_name } => {
-            format!("{}'s {} is destroyed", name(unit), graft_name)
-        }
-        BattleEvent::GraftRejected { unit, graft_name } => {
-            format!("{} REJECTS its {}!", name(unit), graft_name)
-        }
-        BattleEvent::SalvageDropped { def_id } => {
-            let n = data
-                .graftware
-                .get(def_id)
-                .map(|d| d.name.clone())
-                .unwrap_or_else(|| def_id.clone());
-            format!("{} clatters to the ground", n)
-        }
-        BattleEvent::CoreExposed { unit } => format!("{}'s core is EXPOSED", name(unit)),
-        BattleEvent::CoreCracked { unit } => {
-            format!("{}'s core cracks — it's over for it", name(unit))
-        }
-        BattleEvent::BerserkStarted { unit } => format!("{} goes BERSERK!", name(unit)),
-        BattleEvent::BerserkEnded { unit } => format!("{} calms", name(unit)),
-        BattleEvent::HopStarted { to, .. } => format!("rider leaps toward {}", name(to)),
-        BattleEvent::HopLanded { to } => format!("rider mounts {}", name(to)),
-        BattleEvent::RiderExposed => "the rider is thrown into the open!".to_owned(),
-        BattleEvent::Healed { target, amount, .. } => {
-            format!("{} is soothed for {:.0}", name(target), amount)
-        }
-        BattleEvent::Shielded { unit, amount } => {
-            format!("{}'s core is shielded (+{:.0})", name(unit), amount)
-        }
-        BattleEvent::StanceChanged { unit } => format!(
-            "{} switches to {}",
-            name(unit),
-            battle.units[*unit].stance.display_name()
-        ),
-        BattleEvent::RiddenActionReady { .. } => return None,
-        BattleEvent::BattleEnded => return None,
-    };
-    Some(line)
 }

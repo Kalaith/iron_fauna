@@ -54,6 +54,17 @@ impl Game {
                     selected_slot: None,
                 });
             }
+            "outfit_bare" => {
+                // Strip the starter's loadout so the portrait shows the bare
+                // war-body — the "before" to the outfit scene's "after".
+                for c in &mut self.session.profile.roster.creatures {
+                    c.loadout.clear();
+                }
+                self.mode = Mode::Outfit(OutfitScreen {
+                    selected: self.session.profile.roster.party.first().copied(),
+                    selected_slot: None,
+                });
+            }
             "settlement" => {
                 let mut screen = SettlementScreen::new("fernhollow");
                 screen.view = SettlementView::Ring;
