@@ -26,17 +26,6 @@ pub(super) fn sfx_for_event(event: &BattleEvent) -> Option<Sfx> {
     })
 }
 
-pub(super) fn is_decision_point(event: &BattleEvent) -> bool {
-    matches!(
-        event,
-        BattleEvent::RiddenActionReady { .. }
-            | BattleEvent::HopLanded { .. }
-            | BattleEvent::RiderExposed
-            | BattleEvent::BerserkStarted { .. }
-            | BattleEvent::CoreExposed { .. }
-    )
-}
-
 pub(super) fn describe_event(
     battle: &Battle,
     data: &GameData,

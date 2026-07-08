@@ -625,6 +625,45 @@ pub(super) fn quests(data: &GameData, session: &GameSession, c: Rect) {
 
 // --------------------------------------------------------------- Journal
 
+// ---------------------------------------------------------------- System
+
+/// Save / load / quit — the in-game system menu. The title screen owns fresh
+/// starts and settings; this is where an active run is written or abandoned.
+pub(super) fn system(session: &GameSession, c: Rect, mouse: Vec2, actions: &mut Vec<CodexAction>) {
+    text(
+        &format!(
+            "This run  ·  {} steps travelled  ·  {} battles fought",
+            session.steps, session.battles_fought
+        ),
+        c.x,
+        c.y + 8.0,
+        16.0,
+        dark::TEXT_DIM,
+    );
+
+    let bw = 260.0;
+    let bh = 46.0;
+    let mut y = c.y + 44.0;
+    for (label, action) in [
+        ("Save Game", CodexAction::Save),
+        ("Load Game", CodexAction::Load),
+        ("Exit Game", CodexAction::ExitGame),
+    ] {
+        if menu_button(Rect::new(c.x, y, bw, bh), label, true, mouse) {
+            actions.push(action);
+        }
+        y += bh + 12.0;
+    }
+
+    text(
+        "Exit quits to desktop without saving — save first if you want to keep this run.",
+        c.x,
+        y + 6.0,
+        14.0,
+        dark::TEXT_DIM,
+    );
+}
+
 pub(super) fn journal(data: &GameData, session: &GameSession, c: Rect) {
     // Current step, highlighted.
     let gold = Color::new(0.95, 0.82, 0.45, 1.0);

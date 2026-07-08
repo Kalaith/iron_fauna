@@ -20,10 +20,11 @@ pub enum CodexTab {
     Equipment,
     Quests,
     Journal,
+    System,
 }
 
 impl CodexTab {
-    pub const ALL: [CodexTab; 7] = [
+    pub const ALL: [CodexTab; 8] = [
         CodexTab::Status,
         CodexTab::Corelings,
         CodexTab::Party,
@@ -31,6 +32,7 @@ impl CodexTab {
         CodexTab::Equipment,
         CodexTab::Quests,
         CodexTab::Journal,
+        CodexTab::System,
     ];
 
     fn label(self) -> &'static str {
@@ -42,6 +44,7 @@ impl CodexTab {
             CodexTab::Equipment => "Equipment",
             CodexTab::Quests => "Quests",
             CodexTab::Journal => "Journal",
+            CodexTab::System => "System",
         }
     }
 }
@@ -59,6 +62,12 @@ pub enum CodexAction {
     OpenBench,
     /// Spend a field-repair kit on the first damaged graft.
     FieldRepair,
+    /// Write the current run to its save slot.
+    Save,
+    /// Restore the run from its save slot.
+    Load,
+    /// Quit the game to desktop.
+    ExitGame,
 }
 
 pub struct CodexScreen {
@@ -95,6 +104,7 @@ impl CodexScreen {
             KeyCode::Key5,
             KeyCode::Key6,
             KeyCode::Key7,
+            KeyCode::Key8,
         ]
         .into_iter()
         .enumerate()
@@ -128,6 +138,7 @@ impl CodexScreen {
             }
             CodexTab::Quests => tabs::quests(data, session, content),
             CodexTab::Journal => tabs::journal(data, session, content),
+            CodexTab::System => tabs::system(session, content, mouse, &mut actions),
         }
         actions
     }
@@ -140,12 +151,12 @@ impl CodexScreen {
             TextStyle::new(30.0, Color::new(0.88, 0.86, 0.80, 1.0)).params(),
         );
         draw_ui_text_ex(
-            "[Tab] / [Esc] close   ·   [1-7] jump",
+            "[Tab] / [Esc] close   ·   [1-8] jump",
             LOGICAL_WIDTH - 320.0,
             44.0,
             TextStyle::new(15.0, dark::TEXT_DIM).params(),
         );
-        let bw = 168.0;
+        let bw = 144.0;
         for (i, tab) in CodexTab::ALL.into_iter().enumerate() {
             let rect = Rect::new(28.0 + i as f32 * (bw + 8.0), 76.0, bw, 40.0);
             if tab == self.tab {

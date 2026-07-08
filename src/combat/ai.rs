@@ -1,17 +1,15 @@
 //! Standing-orders AI (`combat.md` §4): two legible stances plus cooldowns.
-//! Aggressive fires whatever's off cooldown at the nearest valid target;
-//! Defensive conserves, guards the core, and rebuilds. Enemies run the same
-//! rules — no hidden "smart AI".
+//! Aggressive fires whatever's off cooldown at a valid target; Defensive
+//! conserves, guards the core, and rebuilds. Enemies run the same rules — no
+//! hidden "smart AI".
 
 use crate::combat::engine::Battle;
-use crate::combat::unit::BattleUnit;
 use crate::combat::{Stance, UnitId, WeaponRef};
-use crate::data::graftware::{GraftEffect, RangeBand};
+use crate::data::graftware::GraftEffect;
 use crate::data::GameData;
 
 pub fn think(battle: &mut Battle, data: &GameData, id: UnitId) {
-    let Some(target) = nearest_opponent(battle, id) else {
-        battle.units[id].move_intent = 0.0;
+    let Some(target) = pick_target(battle, id) else {
         return;
     };
 
@@ -21,64 +19,17 @@ pub fn think(battle: &mut Battle, data: &GameData, id: UnitId) {
         battle.units[id].stance
     };
 
-    set_movement(battle, data, id, target, stance);
     act(battle, data, id, target, stance);
 }
 
-fn nearest_opponent(battle: &Battle, id: UnitId) -> Option<UnitId> {
-    let me = &battle.units[id];
+/// The opponent this unit focuses: the one closest to having its core cracked
+/// (fewest intact limbs), so autonomous fire concentrates rather than scatters.
+fn pick_target(battle: &Battle, id: UnitId) -> Option<UnitId> {
+    let side = battle.units[id].side.opponent();
     battle
-        .alive_on(me.side.opponent())
+        .alive_on(side)
         .into_iter()
-        .min_by(|&a, &b| {
-            let da = battle.units[a].distance_to(me);
-            let db = battle.units[b].distance_to(me);
-            da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
-        })
-}
-
-/// The range this unit wants to fight at: its best usable weapon's band,
-/// or melee reach when unarmed.
-fn preferred_range(unit: &BattleUnit, data: &GameData) -> f32 {
-    let bal = &data.balance.battle;
-    unit.weapon_mounts(data)
-        .into_iter()
-        .filter_map(|m| data.graftware.get(&unit.mounts[m].def_id))
-        .map(|def| match def.range {
-            RangeBand::Melee => bal.melee_range,
-            RangeBand::Short => bal.short_range,
-            RangeBand::Long => bal.long_range,
-        })
-        .fold(None::<f32>, |acc, r| Some(acc.map_or(r, |a| a.max(r))))
-        .unwrap_or(bal.melee_range)
-}
-
-fn set_movement(battle: &mut Battle, data: &GameData, id: UnitId, target: UnitId, stance: Stance) {
-    let dist = battle.units[id].distance_to(&battle.units[target]);
-    let toward = (battle.units[target].pos - battle.units[id].pos).signum();
-    let reach = preferred_range(&battle.units[id], data);
-
-    let intent = match stance {
-        Stance::Aggressive => {
-            if dist > reach * 0.9 {
-                toward
-            } else if dist < reach * 0.4 && reach > data.balance.battle.melee_range {
-                -toward * 0.5 // back off to firing distance
-            } else {
-                0.0
-            }
-        }
-        Stance::Defensive => {
-            if dist < reach * 0.8 {
-                -toward // keep the enemy at arm's length
-            } else if dist > reach {
-                toward * 0.4
-            } else {
-                0.0
-            }
-        }
-    };
-    battle.units[id].move_intent = intent;
+        .min_by_key(|&o| battle.units[o].intact_limbs().len())
 }
 
 fn act(battle: &mut Battle, data: &GameData, id: UnitId, target: UnitId, stance: Stance) {

@@ -1,8 +1,10 @@
-//! Semi-real-time battle engine (`combat.md`): continuous clock, cooldown
-//! actions, Vigor economy, limb strip / core crack, rider possession.
+//! Battle engine (`combat.md`): a real-time clock with fixed positions (no
+//! movement or range), cooldown-gated actions, a Vigor economy, limb strip /
+//! core crack, and rider possession. The player commands one ridden creature a
+//! turn at a time via the menu in `ui::battle`; the rest fight on standing orders.
 //!
-//! The engine is pause-agnostic: Wait/Active pacing is the game layer's job —
-//! it simply stops calling `Battle::update` while paused.
+//! The engine is pause-agnostic: Wait/Active pacing and the command menu are the
+//! game layer's job — it simply stops calling `Battle::update` while paused.
 
 pub mod actions;
 pub mod ai;
@@ -99,9 +101,6 @@ pub enum PlayerCommand {
         limb: usize,
     },
     Reinforce,
-    Move {
-        intent: f32,
-    },
     SetStance {
         unit: UnitId,
         stance: Stance,

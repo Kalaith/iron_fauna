@@ -11,6 +11,7 @@ use crate::ui::bestiary::BestiaryScreen;
 use crate::ui::ledger::LedgerScreen;
 use crate::ui::outfit::OutfitScreen;
 use crate::ui::overworld::OverworldScreen;
+use crate::ui::settings::SettingsScreen;
 use crate::ui::settlement::{SettlementScreen, SettlementView};
 use crate::ui::verdict::{FactoryScreenKind, VerdictScreen};
 
@@ -110,6 +111,8 @@ impl Game {
             }
             "codex_quests" => self.codex_scene(crate::ui::codex::CodexTab::Quests, None),
             "codex_journal" => self.codex_scene(crate::ui::codex::CodexTab::Journal, None),
+            "codex_system" => self.codex_scene(crate::ui::codex::CodexTab::System, None),
+            "settings" => self.mode = Mode::Settings(SettingsScreen),
             "bestiary" => {
                 // Seed a partial collection so the screen shows both states.
                 for sp in [

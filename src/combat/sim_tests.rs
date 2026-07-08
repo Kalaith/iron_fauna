@@ -59,8 +59,7 @@ fn called_shot_silences_the_targeted_graft() {
         4,
     )
     .unwrap();
-    // Close the range so the shot connects, and find the enemy's graft mount.
-    battle.units[1].pos = battle.units[0].pos + 100.0;
+    // Find the enemy's graft mount to aim called shots at.
     let mount = battle.units[1]
         .mounts
         .iter()

@@ -42,11 +42,11 @@ impl Battle {
             return Err("battle needs units on both sides".to_owned());
         }
         let mut units = Vec::new();
-        for (i, spec) in player.iter().enumerate() {
-            units.push(BattleUnit::build(spec, data, -180.0 - i as f32 * 110.0)?);
+        for spec in player.iter() {
+            units.push(BattleUnit::build(spec, data)?);
         }
-        for (i, spec) in enemy.iter().enumerate() {
-            units.push(BattleUnit::build(spec, data, 180.0 + i as f32 * 110.0)?);
+        for spec in enemy.iter() {
+            units.push(BattleUnit::build(spec, data)?);
         }
         Ok(Self {
             context,
@@ -118,7 +118,6 @@ impl Battle {
                 ai::think(self, data, id);
             }
         }
-        self.apply_movement(data, dt);
         self.announce_ridden_ready(data);
         self.check_victory(data);
     }
@@ -344,16 +343,6 @@ impl Battle {
             .filter(|m| m.usable() && u.limbs[m.limb_index].intact())
             .filter_map(move |m| data.graftware.get(&m.def_id))
             .map(|def| def.boost)
-    }
-
-    fn apply_movement(&mut self, data: &GameData, dt: f32) {
-        let half = data.balance.battle.arena_half_width;
-        for u in &mut self.units {
-            if !u.alive() {
-                continue;
-            }
-            u.pos = (u.pos + u.move_intent * u.move_speed * dt).clamp(-half, half);
-        }
     }
 
     fn announce_ridden_ready(&mut self, data: &GameData) {

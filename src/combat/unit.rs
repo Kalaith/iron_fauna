@@ -97,8 +97,6 @@ pub struct BattleUnit {
     pub strain_threshold: f32,
     pub power_capacity: f32,
     pub stance: Stance,
-    pub pos: f32,
-    pub move_speed: f32,
     pub dodge: f32,
     pub accuracy_bonus: f32,
     pub regrow_rate: f32,
@@ -111,14 +109,12 @@ pub struct BattleUnit {
     pub limb_dots: Vec<(usize, Dot)>,
     /// Severed limb currently being regrown (channel).
     pub regrow_target: Option<usize>,
-    /// -1..1 movement intent; set by AI or by the player when ridden.
-    pub move_intent: f32,
     /// Accumulator for once-per-second strain-threshold checks.
     pub strain_check_accum: f32,
 }
 
 impl BattleUnit {
-    pub fn build(spec: &UnitSpec, data: &GameData, start_pos: f32) -> Result<Self, String> {
+    pub fn build(spec: &UnitSpec, data: &GameData) -> Result<Self, String> {
         let species = data
             .species
             .get(&spec.species_id)
@@ -197,8 +193,6 @@ impl BattleUnit {
             strain_threshold: d.strain_threshold * bond_strain,
             power_capacity: d.power_capacity,
             stance: spec.stance,
-            pos: start_pos,
-            move_speed: d.move_speed,
             dodge: d.dodge,
             accuracy_bonus: d.accuracy_bonus,
             regrow_rate: d.regrow_hp_per_sec,
@@ -210,7 +204,6 @@ impl BattleUnit {
             core_dots: Vec::new(),
             limb_dots: Vec::new(),
             regrow_target: None,
-            move_intent: 0.0,
             strain_check_accum: 0.0,
         })
     }
@@ -322,10 +315,6 @@ impl BattleUnit {
             .map(|(i, _)| i)
             .collect()
     }
-
-    pub fn distance_to(&self, other: &BattleUnit) -> f32 {
-        (self.pos - other.pos).abs()
-    }
 }
 
 #[cfg(test)]
@@ -355,7 +344,6 @@ mod tests {
         let unit = BattleUnit::build(
             &spec("volpi", Side::Player, vec![("foreleg_l", 0, "spark_coil")]),
             &data,
-            -200.0,
         )
         .unwrap();
         assert_eq!(unit.limbs.len(), 5);
@@ -371,7 +359,6 @@ mod tests {
         let err = BattleUnit::build(
             &spec("volpi", Side::Player, vec![("foreleg_l", 0, "bolt_cannon")]),
             &data,
-            0.0,
         );
         assert!(err.is_err());
     }
@@ -379,8 +366,7 @@ mod tests {
     #[test]
     fn core_exposed_when_all_limbs_severed() {
         let data = GameData::load().unwrap();
-        let mut unit =
-            BattleUnit::build(&spec("volpi", Side::Enemy, vec![]), &data, 200.0).unwrap();
+        let mut unit = BattleUnit::build(&spec("volpi", Side::Enemy, vec![]), &data).unwrap();
         for limb in &mut unit.limbs {
             limb.severed = true;
         }

@@ -70,9 +70,6 @@ pub struct SpeciesCurves {
     /// Speeds below this pivot earn an accuracy bonus (stable chassis).
     pub accuracy_slow_pivot: f32,
     pub accuracy_slow_per_point: f32,
-    pub move_speed_base: f32,
-    pub move_speed_per_speed: f32,
-    pub size_move_mult: SizeScaled,
     /// Bond level bonuses (per point): vigor % and strain-threshold %.
     pub bond_vigor_pct: f32,
     pub bond_strain_pct: f32,
@@ -147,12 +144,9 @@ pub struct BattleTuning {
     pub hop_transit_time: f32,
     /// Damage multiplier against an exposed core.
     pub exposed_core_damage_mult: f32,
-    /// Range bands in world units.
-    pub melee_range: f32,
-    pub short_range: f32,
-    pub long_range: f32,
-    /// Arena half-width in world units.
-    pub arena_half_width: f32,
+    /// Global multiplier on all weapon/natural damage — the master lever for
+    /// making attacks decisively outpace regrowth and healing.
+    pub weapon_damage_mult: f32,
     /// Fraction of damage spilling to the limb when a mounted graft is hit.
     pub graft_spill_frac: f32,
     /// Natural (unarmed) attack: damage scale per point of creature power.
@@ -196,8 +190,7 @@ mod tests {
         assert_eq!(bal.party_slot_budget, 6);
         assert!(bal.vigor.ridden_regen_mult > 1.0);
         assert!(bal.battle.called_shot_accuracy_mult <= 1.0);
-        assert!(bal.battle.melee_range < bal.battle.short_range);
-        assert!(bal.battle.short_range < bal.battle.long_range);
+        assert!(bal.battle.weapon_damage_mult > 0.0);
         assert!(bal.battle.element_synergy_mult > 1.0);
     }
 }

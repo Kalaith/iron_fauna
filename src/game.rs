@@ -18,6 +18,7 @@ use crate::ui::codex::CodexScreen;
 use crate::ui::ledger::LedgerScreen;
 use crate::ui::outfit::OutfitScreen;
 use crate::ui::overworld::{OverworldResult, OverworldScreen};
+use crate::ui::settings::SettingsScreen;
 use crate::ui::settlement::{SettlementScreen, SettlementView};
 use crate::ui::verdict::{FactoryScreenKind, VerdictScreen};
 use crate::ui::{self, MenuContext};
@@ -33,6 +34,7 @@ use macroquad_toolkit::prelude::{begin_virtual_ui_frame, dark, end_virtual_ui_fr
 
 enum Mode {
     Menu,
+    Settings(SettingsScreen),
     Overworld(Box<OverworldScreen>),
     Settlement(SettlementScreen),
     Outfit(OutfitScreen),
@@ -351,6 +353,7 @@ impl Game {
         let virtual_ui = begin_virtual_ui_frame(ui::LOGICAL_WIDTH, ui::LOGICAL_HEIGHT);
 
         let mut actions = Vec::new();
+        let mut settings_actions = Vec::new();
         let mut outfit_actions = Vec::new();
         let mut settlement_actions = Vec::new();
         let mut verdict_actions = Vec::new();
@@ -365,6 +368,9 @@ impl Game {
                     ui: &virtual_ui,
                 };
                 actions = ui::draw_main_menu(&ctx);
+            }
+            Mode::Settings(screen) => {
+                settings_actions = screen.draw(&self.session, &virtual_ui);
             }
             Mode::Overworld(screen) => screen.draw(&self.data, &self.session, &self.assets),
             Mode::Settlement(screen) => {
@@ -395,6 +401,9 @@ impl Game {
 
         for action in actions {
             self.apply_action(action);
+        }
+        for action in settings_actions {
+            self.apply_settings_action(action);
         }
         for action in outfit_actions {
             self.apply_outfit_action(action);

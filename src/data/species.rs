@@ -195,8 +195,6 @@ pub struct DerivedStats {
     pub dodge: f32,
     /// Additive accuracy bonus for slow, stable chassis.
     pub accuracy_bonus: f32,
-    /// Battle movement speed in world units/sec.
-    pub move_speed: f32,
 }
 
 impl SpeciesDef {
@@ -215,10 +213,8 @@ impl SpeciesDef {
                 * c.limb_hp_size_mult.get(size_i),
             core_hp: c.core_hp_base + power * c.core_hp_per_power,
             regrow_hp_per_sec: c.regrow_base + power * c.regrow_per_power,
-            dodge: (speed * c.dodge_per_speed + c.size_dodge_bonus.get(size_i)).clamp(0.0, 0.6),
+            dodge: (speed * c.dodge_per_speed + c.size_dodge_bonus.get(size_i)).clamp(0.0, 0.2),
             accuracy_bonus: ((c.accuracy_slow_pivot - speed).max(0.0)) * c.accuracy_slow_per_point,
-            move_speed: (c.move_speed_base + speed * c.move_speed_per_speed)
-                * c.size_move_mult.get(size_i),
         }
     }
 

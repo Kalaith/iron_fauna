@@ -84,7 +84,7 @@ mod tests {
                         .map(|g| (g.limb.clone(), g.slot, g.graft.clone(), None))
                         .collect(),
                 };
-                BattleUnit::build(&spec, &data, 0.0)
+                BattleUnit::build(&spec, &data)
                     .unwrap_or_else(|err| panic!("{}: illegal guard: {}", f.id, err));
             }
         }

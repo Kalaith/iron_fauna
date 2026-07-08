@@ -79,7 +79,7 @@ This is the mechanical expression of Pillar 2: the question every build asks is 
 
 ### 4.5 Turn structure — resolved, see `combat.md`
 
-Combat is **2D side-view, semi-real-time with a player-selectable pause setting** (Wait: auto-pauses at decision points; Active: never auto-pauses), not turn-based. This also brought in the full party/rider structure — a battle loadout spent from a 6-slot field budget (Small 1 / Medium 2 / Large 3), with the player directly controlling one ridden creature at a time while the rest fight on simplified Aggressive/Defensive standing orders. See `combat.md` for the complete system.
+Combat is **2D side-view with fixed positions and an Atelier-style command menu over a real-time clock** — no movement or range; the player commands one ridden creature a turn at a time (Attack → weapon → target/part, Utility, Reinforce, Regrow, Item, Ride-another, Orders), and per-weapon cooldowns are the delay between turns. A player-selectable pace setting (Wait: the menu auto-opens when you can act; Active: you open it under time pressure) governs tempo. This also brought in the full party/rider structure — a battle loadout spent from a 6-slot field budget (Small 1 / Medium 2 / Large 3), with the rest of the party fighting on simplified Aggressive/Defensive standing orders. See `combat.md` for the complete system.
 
 ---
 

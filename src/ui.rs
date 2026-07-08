@@ -7,6 +7,7 @@ pub mod creature_art;
 pub mod ledger;
 pub mod outfit;
 pub mod overworld;
+pub mod settings;
 pub mod settlement;
 pub mod skin;
 pub mod verdict;
@@ -27,12 +28,9 @@ pub enum UiAction {
     NewGame,
     EnterWorld,
     StartDevBattle,
-    OpenOutfit,
-    OpenBestiary,
-    OpenLedger,
-    Save,
     Load,
-    TogglePace,
+    OpenSettings,
+    ExitGame,
 }
 
 pub fn element_color(element: Element) -> Color {
@@ -89,23 +87,13 @@ pub fn draw_main_menu(ctx: &MenuContext<'_>) -> Vec<UiAction> {
         TextStyle::new(16.0, dark::TEXT_DIM).params(),
     );
 
-    let buttons: [(&str, UiAction, bool); 9] = [
-        ("Enter the World", UiAction::EnterWorld, true),
+    let buttons: [(&str, UiAction, bool); 6] = [
+        ("Continue", UiAction::EnterWorld, true),
         ("New Game", UiAction::NewGame, true),
-        ("Dev Battle", UiAction::StartDevBattle, true),
-        ("Party & Grafting", UiAction::OpenOutfit, true),
-        ("Bestiary", UiAction::OpenBestiary, true),
-        ("The World Ledger", UiAction::OpenLedger, true),
-        ("Save", UiAction::Save, true),
         ("Load", UiAction::Load, ctx.save_exists),
-        (
-            match ctx.session.pace {
-                crate::state::PaceSetting::Wait => "Pace: Wait",
-                crate::state::PaceSetting::Active => "Pace: Active",
-            },
-            UiAction::TogglePace,
-            true,
-        ),
+        ("Settings", UiAction::OpenSettings, true),
+        ("Exit Game", UiAction::ExitGame, true),
+        ("Dev Battle", UiAction::StartDevBattle, true),
     ];
 
     // A skinned panel frames the button column when the sprite skin is loaded.

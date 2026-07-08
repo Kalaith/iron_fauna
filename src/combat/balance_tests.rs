@@ -36,7 +36,7 @@ fn reference_player(data: &GameData) -> Vec<UnitSpec> {
         grafts: vec![("foreleg_l".to_owned(), 0, "spark_coil".to_owned(), None)],
     };
     // Sanity: the reference party itself must be buildable.
-    assert!(crate::combat::unit::BattleUnit::build(&bear, data, 0.0).is_ok());
+    assert!(crate::combat::unit::BattleUnit::build(&bear, data).is_ok());
     vec![bear, fox]
 }
 

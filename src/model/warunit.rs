@@ -87,7 +87,7 @@ mod tests {
                 stance: Stance::Aggressive,
                 grafts,
             };
-            BattleUnit::build(&spec, &data, 0.0)
+            BattleUnit::build(&spec, &data)
                 .unwrap_or_else(|err| panic!("{}: illegal war unit: {}", species.id, err));
         }
     }

@@ -4,7 +4,7 @@ use crate::combat::engine::Battle;
 use crate::combat::events::BattleEvent;
 use crate::combat::unit::Dot;
 use crate::combat::{CalledTarget, PlayerCommand, Side, UnitId, WeaponRef};
-use crate::data::graftware::{BoostEffect, GraftEffect, RangeBand};
+use crate::data::graftware::{BoostEffect, GraftEffect};
 use crate::data::item::ConsumableEffect;
 use crate::data::GameData;
 
@@ -65,10 +65,6 @@ impl Battle {
             }
             PlayerCommand::Regrow { limb } => self.begin_regrow(id, limb),
             PlayerCommand::Reinforce => self.reinforce(data, id),
-            PlayerCommand::Move { intent } => {
-                self.units[id].move_intent = intent.clamp(-1.0, 1.0);
-                true
-            }
             PlayerCommand::SetStance { .. } | PlayerCommand::BeginHop { .. } => false,
         }
     }
@@ -284,10 +280,10 @@ impl Battle {
         if self.units[attacker].side == self.units[target].side {
             return false;
         }
-        let dist = self.units[attacker].distance_to(&self.units[target]);
 
-        // Gather weapon parameters.
-        let (damage, vigor_cost, cooldown, range, synergy, draw, boost_active) = match weapon {
+        // Gather weapon parameters. With fixed positions every foe is in reach;
+        // weapons differ by damage, cooldown, and cost, not range.
+        let (damage, vigor_cost, cooldown, synergy, draw, boost_active) = match weapon {
             WeaponRef::Natural => {
                 let u = &self.units[attacker];
                 if u.natural_cooldown > 0.0 {
@@ -297,7 +293,6 @@ impl Battle {
                     u.natural_damage,
                     2.0,
                     bal.battle.natural_attack_cooldown,
-                    RangeBand::Melee,
                     1.0,
                     0.0,
                     false,
@@ -322,7 +317,6 @@ impl Battle {
                     def.damage,
                     def.vigor_cost,
                     def.cooldown,
-                    def.range,
                     u.synergy(data, def),
                     def.power_draw as f32,
                     ridden,
@@ -330,14 +324,6 @@ impl Battle {
             }
         };
 
-        let max_range = match range {
-            RangeBand::Melee => bal.battle.melee_range,
-            RangeBand::Short => bal.battle.short_range,
-            RangeBand::Long => bal.battle.long_range,
-        };
-        if dist > max_range {
-            return false;
-        }
         if self.units[attacker].vigor < vigor_cost {
             return false;
         }
@@ -375,13 +361,13 @@ impl Battle {
                 acc *= self.rider_mods.called_shot_mult;
             }
         }
-        let hit_chance = (acc * (1.0 - self.units[target].dodge)).clamp(0.05, 0.95);
+        let hit_chance = (acc * (1.0 - self.units[target].dodge)).clamp(0.4, 0.97);
         if !self.rng.chance(hit_chance) {
             self.events.push(BattleEvent::Miss { attacker, target });
             return true; // the shot happened; it just missed
         }
 
-        let dealt = damage * synergy * ammo_mult;
+        let dealt = damage * synergy * ammo_mult * bal.battle.weapon_damage_mult;
         self.apply_damage(data, attacker, target, dealt, called);
         // Incendiary ammo leaves a burn on the struck body.
         if let Some((dps, secs)) = ammo_burn {
@@ -624,7 +610,6 @@ impl Battle {
         let u = &mut self.units[target];
         u.downed = true;
         u.core_hp = 0.0;
-        u.move_intent = 0.0;
         self.events.push(BattleEvent::CoreCracked { unit: target });
 
         if self.rider.mounted_on == Some(target) {

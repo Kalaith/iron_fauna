@@ -6,11 +6,11 @@ use super::{Game, Mode, ReturnTo};
 use crate::audio::Sfx;
 use crate::model::worldstate::Verdict;
 use crate::state::GameSession;
-use crate::ui::bestiary::BestiaryScreen;
 use crate::ui::codex::{CodexAction, CodexScreen};
 use crate::ui::ledger::LedgerScreen;
 use crate::ui::outfit::{OutfitAction, OutfitScreen};
 use crate::ui::overworld::OverworldScreen;
+use crate::ui::settings::{SettingsAction, SettingsScreen};
 use crate::ui::settlement::{sell_price, SettlementAction, SettlementScreen, SettlementView};
 use crate::ui::verdict::VerdictAction;
 use crate::ui::UiAction;
@@ -28,23 +28,29 @@ impl Game {
                 self.mode = Mode::Overworld(Box::new(OverworldScreen::new(&self.session)));
             }
             UiAction::StartDevBattle => self.start_dev_battle(),
-            UiAction::OpenOutfit => {
-                self.return_to = ReturnTo::Menu;
-                self.mode = Mode::Outfit(OutfitScreen {
-                    selected: self.session.profile.roster.party.first().copied(),
-                    selected_slot: None,
-                });
-            }
-            UiAction::OpenLedger => self.mode = Mode::Ledger(LedgerScreen),
-            UiAction::OpenBestiary => self.mode = Mode::Bestiary(BestiaryScreen),
-            UiAction::Save => self.save_game(),
             UiAction::Load => self.load_game(),
-            UiAction::TogglePace => {
+            UiAction::OpenSettings => self.mode = Mode::Settings(SettingsScreen),
+            UiAction::ExitGame => self.quit_game(),
+        }
+    }
+
+    pub(super) fn apply_settings_action(&mut self, action: SettingsAction) {
+        self.audio.play(Sfx::Select);
+        match action {
+            SettingsAction::Back => self.mode = Mode::Menu,
+            SettingsAction::TogglePace => {
                 self.session.pace = self.session.pace.toggled();
                 self.notifications
                     .info(format!("Pace: {}", self.session.pace.display_name()));
             }
         }
+    }
+
+    /// Quits the game. On the web the browser owns the tab, so this is a no-op
+    /// there and the Exit button simply does nothing.
+    pub(super) fn quit_game(&mut self) {
+        #[cfg(not(target_arch = "wasm32"))]
+        std::process::exit(0);
     }
 
     pub(super) fn apply_outfit_action(&mut self, action: OutfitAction) {
@@ -259,6 +265,9 @@ impl Game {
                 }
             }
             CodexAction::FieldRepair => self.field_repair(),
+            CodexAction::Save => self.save_game(),
+            CodexAction::Load => self.load_game(),
+            CodexAction::ExitGame => self.quit_game(),
         }
     }
 

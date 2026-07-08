@@ -1,21 +1,21 @@
 # IRON FAUNA — Combat System
 
-*Draft v0.1 — distilled from `battle_notes.md`. Companion to `game_design.md` (§3 anatomy, §4 combat system, §5 combat contexts) and `creature.md` (chassis stats, limb mounts, Strain/Power Draw). This document makes the call that both of those left open: **combat is 2D side-view, semi-real-time, with a player-facing setting for how aggressively it pauses.** It resolves `game_design.md` §12.1 (turn structure) and gives the party/rider structure that document didn't yet have.*
+*Draft v0.2 — distilled from `battle_notes.md`. Companion to `game_design.md` (§3 anatomy, §4 combat system, §5 combat contexts) and `creature.md` (chassis stats, limb mounts, Strain/Power Draw). **Combat is 2D side-view with fixed positions and an Atelier-style command menu over a real-time clock:** you directly command one ridden creature a turn at a time while the rest of the party fights on standing orders. This supersedes the earlier "semi-real-time ATB with free movement" direction (v0.1) — there is no positioning or movement, and commands are issued from a menu, not action-game keys.*
 
 ---
 
-## 1. Format: semi-real-time, not turns
+## 1. Format: real-time clock, menu commands, fixed positions
 
-Combat runs on a continuous clock, not discrete turns — creatures act on their own cooldowns/animations and the battlefield keeps moving while you decide what to do. This is real-time-with-pause (ATB-adjacent), not the turn-based structure `game_design.md` §4.5 originally assumed.
+Creatures hold **fixed positions** — there is no movement or range on the battlefield; every combatant can always reach every foe. What differs between weapons is damage, cost, and **per-weapon cooldown**, not distance.
 
-The player controls how much that clock waits for them, via a battle-pacing setting with two options:
+The player commands exactly one creature — the ridden one — through a **command menu** (Attack → weapon → target/part, Utility, Reinforce, Regrow, Item, Ride-another, Orders, Wait). Issuing a command executes it immediately; the weapon's cooldown is the delay before that weapon can be used again. Everything not ridden fights autonomously on standing orders (§4). The real-time clock only advances while the menu is closed — so a turn is: *menu opens → you pick a command → it resolves → the clock runs until you can act again.*
 
-- **Wait (default).** The instant the game needs a decision from you — your ridden creature's action is ready, you open the standing-orders screen, or you initiate a rider-hop (§5) — the battlefield pauses. Nothing else moves while you choose. The moment you confirm a command, the clock resumes and that command plays out in real time before the next auto-pause.
-- **Active.** The clock never auto-pauses. Decision points still occur (an action becomes available, orders can be opened), but the battlefield keeps running while you handle them — you're reacting under time pressure the whole fight. A manual full-pause hotkey exists in both modes for genuine stops (menus, breathers), but only Wait mode pauses *for* you at decision points.
+A battle-pacing setting controls when the menu opens:
+
+- **Wait (default).** Whenever the ridden creature has an action available, the field pauses and the command menu opens for you. Pick a command and the clock resumes until the next action comes off cooldown. Choosing **Wait** in the menu lets the clock run without acting; press Enter/Space anytime to summon the menu again.
+- **Active.** The clock never auto-opens the menu — you press Enter/Space to open it when you want to act, so you're deciding under time pressure. A manual full-pause hotkey (`P`) exists in both modes.
 
 This is one system with a difficulty/tempo lever, not two combat modes — Wild subdue, Factory dismantle, and Sanctioned duels (`game_design.md` §5) all run on it identically; only the fiction and win-condition differ.
-
-**Important rule:** Wait mode pauses *for decisions*, never *during their resolution*. Confirming a rider-hop, an attack, or an order change lets that action play out in real time at full risk before the game pauses again. Without this rule, Wait mode would let players eliminate the exposure windows that make rider-hopping (§5) and strain rotation (§6) meaningful — the setting is a thinking-time accommodation, not a way to freeze risk itself.
 
 ---
 
@@ -60,7 +60,7 @@ Riding a creature grants two things an autonomous (AI-run) creature cannot have:
 
 ### 3.1 Called shots
 
-Called shots use directional input — arrow keys or a d-pad — to select which enemy limb or weapon mount to aim at, mapped to that mount's position on the target's sprite (e.g. up for head/back-mounted graftware, down for leg mounts, left/right for arm mounts). This is the mechanical tool for the "Strip & silence" step of the core combat loop (`game_design.md` §4.1) and plugs directly into `creature.md` §4's mount system — you're choosing *which* mount to blow off, not just doing generic damage. Autonomous creatures under Standing Orders (§4) attack whatever's nearest/valid and cannot make called shots — if a fight needs precision, stripping one specific mount off one specific enemy, you have to be riding a creature that can reach it. Only the rider can do surgery.
+Called shots are chosen from the **Strike** submenu after picking a weapon: the target's strikeable spots are listed — center mass, each mounted graft (with its remaining HP), and each bare limb — and you pick one. `<-`/`->` switch which enemy is in the crosshair. This is the mechanical tool for the "Strip & silence" step of the core combat loop (`game_design.md` §4.1) and plugs directly into `creature.md` §4's mount system — you're choosing *which* mount to blow off, not just doing generic damage. Autonomous creatures under Standing Orders (§4) attack whatever's nearest/valid and cannot make called shots — if a fight needs precision, stripping one specific mount off one specific enemy, you have to be riding a creature that can reach it. Only the rider can do surgery.
 
 ### 3.2 The Boost is creature- and weapon-dependent
 
@@ -86,8 +86,8 @@ Orders are set before a fight (loadout/prep screen) and can be flipped mid-fight
 
 Switching which creature you're riding is a real, costed action, not a menu toggle:
 
-- **Time.** Selecting a hop target is a decision point (pauses in Wait mode, per §1) — but the hop itself, once confirmed, plays out in real time.
-- **Exposure.** Mid-transit, the rider is physically crossing to the new mount and is not shielded behind any creature's core. Both the creature being left and the one being boarded are briefly AI-controlled (on their last-set Standing Orders) during the crossing.
+- **Time.** Choosing "Ride another" from the menu picks the new mount; the hop then takes a short transit time on the clock before you have control of it.
+- **Exposure.** During that transit the rider is between mounts and not shielded behind any creature's core. Both the creature being left and the one being boarded are AI-controlled (on their last-set Standing Orders) until the hop lands. If the destination is cracked mid-transit, the rider lands exposed and must hop again.
 
 This makes every hop a genuine tactical question — *where am I needed most right now* — weighed against real risk, not a free camera swap. Hopping is also the primary tool for the Strain and core-crack tensions below.
 
@@ -127,11 +127,11 @@ Same engine underneath all three from `game_design.md` §5 — only the fiction 
 
 **Resolved by this document:**
 
-- Combat format: 2D side-view, semi-real-time, not turn-based (`game_design.md` §12.1).
-- Pacing control: player-selectable Wait/Active pause setting (§1).
+- Combat format: 2D side-view, fixed positions (no movement/range), real-time clock with an Atelier-style command menu; one ridden creature commanded a turn at a time (§1).
+- Pacing control: player-selectable Wait/Active setting governing when the command menu opens (§1).
 - Party structure: 6-slot budget spent by Size (Small 1 / Medium 2 / Large 3), rider-possession + Standing Orders, not full simultaneous multi-unit control (§2).
 - Standing Orders scope: kept to Aggressive/Defensive stances plus per-action cooldowns for the MVP, not a deeper gambit-scripting system (§4).
-- Called-shot input: directional (arrow keys / d-pad), mapped to the targeted mount's position on the enemy sprite (§3.1).
+- Called-shot input: chosen from the Strike submenu (center mass / each graft / each limb), with `<-`/`->` to switch foe (§3.1).
 - The Boost: not fixed — depends on the ridden creature's species *and* its currently equipped graftware (§3.2).
 - Player-side core-crack consequences: an individual core-crack downs that one creature; losing every fielded creature ends the encounter in a flee/escape, not a game over (§7.1).
 - Huge-class slot cost: 4 slots (§2.1) — Huge is player-fieldable, just expensive.

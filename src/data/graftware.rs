@@ -21,13 +21,6 @@ impl GraftKind {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum RangeBand {
-    Melee,
-    Short,
-    Long,
-}
-
 /// Continuous or triggered effect for utility graftware.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -52,6 +45,16 @@ pub enum GraftEffect {
     SensorArray { accuracy_bonus: f32 },
     /// Passive: limb regrowth speed multiplier.
     GrowthGland { regrow_mult: f32 },
+}
+
+impl GraftEffect {
+    /// Whether this effect is player-triggered (vs. an always-on passive).
+    pub fn is_triggered(self) -> bool {
+        matches!(
+            self,
+            GraftEffect::Heal { .. } | GraftEffect::ShieldCore { .. }
+        )
+    }
 }
 
 /// What the Boost does with this graft equipped while ridden
@@ -132,8 +135,6 @@ pub struct GraftwareDef {
     pub cooldown: f32,
     #[serde(default)]
     pub vigor_cost: f32,
-    #[serde(default = "default_range")]
-    pub range: RangeBand,
 
     // Armor field: flat damage reduction added to the limb it's mounted on
     // (and reduces spill-through to the limb).
@@ -147,10 +148,6 @@ pub struct GraftwareDef {
     pub effect: Option<GraftEffect>,
     #[serde(default)]
     pub boost: BoostEffect,
-}
-
-fn default_range() -> RangeBand {
-    RangeBand::Short
 }
 
 impl GraftwareDef {
