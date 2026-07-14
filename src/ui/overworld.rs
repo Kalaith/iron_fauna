@@ -418,16 +418,6 @@ fn held_direction() -> Option<(i32, i32)> {
     }
 }
 
-/// Move `cur` toward `target` by at most `max_delta`, snapping on arrival.
-fn approach(cur: f32, target: f32, max_delta: f32) -> f32 {
-    let d = target - cur;
-    if d.abs() <= max_delta {
-        target
-    } else {
-        cur + d.signum() * max_delta
-    }
-}
-
 /// Fliers earn their keep as overworld pace (`creature.md` §2.4).
 fn step_time(data: &GameData, session: &GameSession) -> f32 {
     let has_flier = session

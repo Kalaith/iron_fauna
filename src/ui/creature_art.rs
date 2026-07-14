@@ -16,6 +16,7 @@ use crate::state::GameSession;
 use crate::ui::element_color;
 use crate::util::Rng;
 use macroquad::prelude::*;
+use macroquad_toolkit::colors::{darken, lighten, mix};
 
 /// One graft reduced to just what the sprite needs to bolt it on.
 pub struct GraftVisual {
@@ -107,33 +108,6 @@ pub fn region_point(cx: f32, cy: f32, u: f32, region: LimbRegion) -> Vec2 {
     vec2(cx, cy) + offset
 }
 
-fn brighten(c: Color, a: f32) -> Color {
-    Color::new(
-        (c.r + a).min(1.0),
-        (c.g + a).min(1.0),
-        (c.b + a).min(1.0),
-        c.a,
-    )
-}
-
-fn darken(c: Color, a: f32) -> Color {
-    Color::new(
-        (c.r - a).max(0.0),
-        (c.g - a).max(0.0),
-        (c.b - a).max(0.0),
-        c.a,
-    )
-}
-
-fn mix(a: Color, b: Color, t: f32) -> Color {
-    Color::new(
-        a.r + (b.r - a.r) * t,
-        a.g + (b.g - a.g) * t,
-        a.b + (b.b - a.b) * t,
-        a.a,
-    )
-}
-
 /// Stable per-species seed (FNV-1a over the id) so jitter never flickers.
 fn species_seed(species: &SpeciesDef) -> u64 {
     let mut h = 0xcbf2_9ce4_8422_2325u64;
@@ -178,7 +152,7 @@ fn render(cx: f32, cy: f32, u: f32, species: &SpeciesDef, grafts: &[GraftVisual]
     };
     let pal = Palette {
         base,
-        belly: brighten(base, 0.14),
+        belly: lighten(base, 0.14),
         line: if flat {
             Color::new(0.10, 0.11, 0.14, 1.0)
         } else {
@@ -328,7 +302,7 @@ fn draw_head(cx: f32, cy: f32, u: f32, species: &SpeciesDef, pal: &Palette, rng:
     let hy = cy - 0.52 * u;
     // Ears / horns by temperament, chosen deterministically.
     draw_head_crest(cx, hy, hr, species, pal, rng);
-    draw_circle(cx, hy, hr, brighten(pal.base, 0.03));
+    draw_circle(cx, hy, hr, lighten(pal.base, 0.03));
     draw_circle_lines(cx, hy, hr, 2.0, pal.line);
     if pal.silhouette {
         return;
@@ -467,7 +441,7 @@ fn draw_weapon(pos: Vec2, dir: Vec2, u: f32, tint: Color) {
         Color::new(0.2, 0.2, 0.23, 1.0),
     );
     draw_line(pos.x, pos.y, tip.x, tip.y, 0.13 * u, metal);
-    draw_circle(tip.x, tip.y, 0.11 * u, brighten(tint, 0.1));
+    draw_circle(tip.x, tip.y, 0.11 * u, lighten(tint, 0.1));
     draw_circle(tip.x, tip.y, 0.05 * u, WHITE);
 }
 
@@ -475,7 +449,7 @@ fn draw_armor(pos: Vec2, u: f32, tint: Color) {
     let plate = mix(tint, Color::new(0.5, 0.53, 0.58, 1.0), 0.55);
     draw_poly(pos.x, pos.y, 6, 0.26 * u, 15.0, plate);
     draw_poly_lines(pos.x, pos.y, 6, 0.26 * u, 15.0, 2.0, darken(plate, 0.2));
-    draw_circle(pos.x, pos.y, 0.05 * u, brighten(plate, 0.18));
+    draw_circle(pos.x, pos.y, 0.05 * u, lighten(plate, 0.18));
 }
 
 fn draw_utility(pos: Vec2, dir: Vec2, u: f32, tint: Color) {
