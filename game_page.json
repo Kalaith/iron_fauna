@@ -1,0 +1,21 @@
+{
+  "title": "IRON FAUNA",
+  "status": { "text": "In Development", "class": "in-development" },
+  "canvas_rendering": "pixelated",
+  "about": [
+    "A darker 2D creature-collector. Catch gentle wild creatures, graft living weapons onto them, and ride them into battle to hold back a world that grows its own monsters — deciding, region by region, whether the old bio-factories that make them should be destroyed, revived, or claimed."
+  ],
+  "controls": [
+    { "key": "WASD / Arrows", "desc": "Move / navigate" },
+    { "key": "Space / Enter", "desc": "Confirm / interact" },
+    { "key": "Esc", "desc": "Back / menu" },
+    { "key": "P", "desc": "Pause battle" },
+    { "key": "Tab", "desc": "Rider hop targeting" }
+  ],
+  "details": [
+    { "label": "Genre", "value": "Creature-Collector RPG" },
+    { "label": "Engine", "value": "Macroquad + Toolkit" },
+    { "label": "Platform", "value": "Browser, Windows" }
+  ],
+  "repository": "https://github.com/Kalaith/iron_fauna"
+}
